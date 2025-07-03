@@ -42,14 +42,47 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
       
       setStream(mediaStream);
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        // Force video to play
-        await videoRef.current.play().catch(console.error);
-        console.log('Camera stream started successfully', {
-          streamActive: mediaStream.active,
-          videoTracks: mediaStream.getVideoTracks().length,
-          videoReady: videoRef.current.readyState
+        const video = videoRef.current;
+        video.srcObject = mediaStream;
+        
+        // Add event listeners for debugging
+        video.addEventListener('loadedmetadata', () => {
+          console.log('Video metadata loaded', {
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            duration: video.duration
+          });
         });
+        
+        video.addEventListener('canplay', () => {
+          console.log('Video can play');
+        });
+        
+        video.addEventListener('playing', () => {
+          console.log('Video is playing');
+        });
+        
+        // Force video to play
+        try {
+          await video.play();
+          console.log('Camera stream started successfully', {
+            streamActive: mediaStream.active,
+            videoTracks: mediaStream.getVideoTracks().length,
+            videoReady: video.readyState,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight
+          });
+          
+          // Additional check after a short delay to ensure video is actually playing
+          setTimeout(() => {
+            if (video.videoWidth === 0 || video.videoHeight === 0) {
+              console.warn('Video dimensions are 0, attempting to refresh stream');
+              video.load();
+            }
+          }, 1000);
+        } catch (playError) {
+          console.error('Error playing video:', playError);
+        }
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
@@ -193,6 +226,11 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
                   playsInline
                   muted
                   className="w-full h-full object-cover"
+                  style={{
+                    transform: 'scaleX(-1)', // Mirror the video like a selfie camera
+                    minHeight: '100%',
+                    minWidth: '100%'
+                  }}
                 />
                 
                 {/* Camera overlay */}
