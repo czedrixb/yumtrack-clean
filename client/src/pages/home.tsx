@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import CanvasCamera from "@/components/canvas-camera";
+import SimpleCamera from "@/components/simple-camera";
 import NutritionResults from "@/components/nutrition-results";
 import type { FoodAnalysis } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
@@ -74,7 +74,7 @@ export default function Home() {
 
   if (currentView === 'camera') {
     return (
-      <CanvasCamera
+      <SimpleCamera
         onImageCaptured={handleImageSelected}
         onCancel={() => setCurrentView('upload')}
       />
