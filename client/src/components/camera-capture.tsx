@@ -63,21 +63,29 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
         video.addEventListener('loadedmetadata', async () => {
           console.log('Video metadata loaded');
           try {
+            video.muted = true; // Ensure muted for autoplay
             await video.play();
             await waitForVideo();
             console.log('Camera stream ready for capture');
           } catch (playError) {
             console.error('Error playing video:', playError);
-            // Try without audio constraints
-            video.muted = true;
-            try {
-              await video.play();
-              console.log('Video playing after muting');
-            } catch (retryError) {
-              console.error('Retry failed:', retryError);
-            }
           }
         });
+
+        // Ensure video keeps playing
+        video.addEventListener('pause', () => {
+          console.log('Video paused, attempting to resume');
+          video.play().catch(console.error);
+        });
+
+        // Force refresh after stream is set
+        setTimeout(() => {
+          if (video.srcObject === mediaStream) {
+            video.load();
+            video.play().catch(console.error);
+            console.log('Forced video refresh');
+          }
+        }, 500);
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
@@ -269,15 +277,23 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
                   muted
                   className="w-full h-full object-cover"
                   style={{
-                    transform: 'scaleX(-1)', // Mirror the video like a selfie camera
-                    minHeight: '100%',
-                    minWidth: '100%'
+                    backgroundColor: 'black',
+                    display: 'block'
                   }}
                 />
                 
                 {/* Camera overlay */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="w-64 h-64 border-2 border-white rounded-2xl opacity-50"></div>
+                </div>
+
+                {/* Debug overlay */}
+                <div className="absolute top-4 left-4 bg-black/50 text-white p-2 rounded text-xs">
+                  Stream: {stream ? 'Active' : 'Inactive'}
+                  <br />
+                  Video: {videoRef.current ? `${videoRef.current.videoWidth}x${videoRef.current.videoHeight}` : 'N/A'}
+                  <br />
+                  Ready: {videoRef.current ? videoRef.current.readyState : 'N/A'}
                 </div>
               </>
             ) : (
