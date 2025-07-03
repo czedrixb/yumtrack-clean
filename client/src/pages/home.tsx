@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Camera, Image, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,11 @@ import { dataURLtoBlob } from "@/lib/image-utils";
 
 type ViewState = 'upload' | 'camera' | 'analyzing' | 'results';
 
-export default function Home() {
+interface HomeRef {
+  goToHome: () => void;
+}
+
+const Home = forwardRef<HomeRef>((props, ref) => {
   const [currentView, setCurrentView] = useState<ViewState>('upload');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysis | null>(null);
@@ -75,6 +79,16 @@ export default function Home() {
     // Refresh recent analyses when returning to home
     queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
   };
+
+  // Expose goToHome method through ref
+  useImperativeHandle(ref, () => ({
+    goToHome: () => {
+      setCurrentView('upload');
+      setSelectedImage(null);
+      setAnalysisResult(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
+    }
+  }));
 
   // Refetch recent analyses when returning to home view
   useEffect(() => {
@@ -241,4 +255,8 @@ export default function Home() {
       )}
     </main>
   );
-}
+});
+
+Home.displayName = 'Home';
+
+export default Home;

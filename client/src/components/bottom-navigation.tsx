@@ -9,8 +9,21 @@ const navItems = [
   { path: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export default function BottomNavigation() {
+interface BottomNavigationProps {
+  onHomeClick?: () => void;
+}
+
+export default function BottomNavigation({ onHomeClick }: BottomNavigationProps) {
   const [location, setLocation] = useLocation();
+
+  const handleNavClick = (path: string) => {
+    if (path === "/" && onHomeClick) {
+      // Custom home navigation handler
+      onHomeClick();
+    } else {
+      setLocation(path);
+    }
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-30 safe-area-bottom">
@@ -23,7 +36,7 @@ export default function BottomNavigation() {
                 key={path}
                 variant="ghost"
                 size="sm"
-                onClick={() => setLocation(path)}
+                onClick={() => handleNavClick(path)}
                 className={`flex flex-col items-center space-y-1 py-2 px-4 h-auto ${
                   isActive 
                     ? 'text-primary' 
