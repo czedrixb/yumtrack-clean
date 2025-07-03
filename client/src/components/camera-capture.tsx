@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { X, Camera, RotateCcw, Check } from "lucide-react";
@@ -46,6 +46,13 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
       setStream(null);
     }
   }, [stream]);
+
+  // Start camera automatically when component mounts in camera mode (no trigger)
+  useEffect(() => {
+    if (!trigger && isOpen && !capturedImage && !stream) {
+      startCamera();
+    }
+  }, [isOpen, capturedImage, stream, trigger, startCamera]);
 
   const capturePhoto = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -166,7 +173,7 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
               autoPlay
               playsInline
               className="w-full h-full object-cover"
-              onLoadedMetadata={startCamera}
+              onCanPlay={startCamera}
             />
             
             {/* Camera overlay */}
@@ -227,7 +234,7 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   if (trigger) {
     return (
       <>
-        <div onClick={() => setIsOpen(true)}>
+        <div onClick={() => fileInputRef.current?.click()}>
           {trigger}
         </div>
         <input
@@ -237,7 +244,6 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
           onChange={handleFileSelect}
           className="hidden"
         />
-        {isOpen && <CameraCaptureContent />}
       </>
     );
   }
