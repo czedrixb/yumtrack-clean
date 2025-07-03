@@ -170,8 +170,7 @@ export default function SimpleCamera({ onImageCaptured, onCancel }: SimpleCamera
               muted
               className="w-full h-full object-cover"
               style={{ 
-                backgroundColor: 'black',
-                transform: 'scaleX(-1)' // Mirror for selfie effect
+                backgroundColor: 'black'
               }}
             />
             
