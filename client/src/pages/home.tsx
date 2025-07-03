@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import CameraCapture from "@/components/camera-capture";
+import CanvasCamera from "@/components/canvas-camera";
 import NutritionResults from "@/components/nutrition-results";
 import type { FoodAnalysis } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
@@ -74,7 +74,7 @@ export default function Home() {
 
   if (currentView === 'camera') {
     return (
-      <CameraCapture
+      <CanvasCamera
         onImageCaptured={handleImageSelected}
         onCancel={() => setCurrentView('upload')}
       />
@@ -165,18 +165,30 @@ export default function Home() {
             Take Photo
           </Button>
           
-          <CameraCapture
-            onImageCaptured={handleImageSelected}
-            trigger={
-              <Button 
-                variant="outline"
-                className="w-full py-4 h-auto text-lg font-semibold border-2 hover:border-primary hover:text-primary"
-              >
-                <Image className="w-6 h-6 mr-3" />
-                Choose from Gallery
-              </Button>
-            }
-          />
+          <Button 
+            variant="outline"
+            className="w-full py-4 h-auto text-lg font-semibold border-2 hover:border-primary hover:text-primary"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const imageData = event.target?.result as string;
+                    handleImageSelected(imageData);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              };
+              input.click();
+            }}
+          >
+            <Image className="w-6 h-6 mr-3" />
+            Choose from Gallery
+          </Button>
         </div>
       )}
 
