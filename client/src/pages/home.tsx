@@ -50,7 +50,7 @@ const Home = forwardRef<HomeRef>((props, ref) => {
       setCurrentView('results');
       // Invalidate both queries to update home page data
       queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
     },
     onError: (error) => {
       toast({
@@ -77,7 +77,7 @@ const Home = forwardRef<HomeRef>((props, ref) => {
     setSelectedImage(null);
     setAnalysisResult(null);
     // Refresh recent analyses when returning to home
-    queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
   };
 
   // Expose goToHome method through ref
@@ -86,14 +86,14 @@ const Home = forwardRef<HomeRef>((props, ref) => {
       setCurrentView('upload');
       setSelectedImage(null);
       setAnalysisResult(null);
-      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
     }
   }));
 
   // Refetch recent analyses when returning to home view
   useEffect(() => {
     if (currentView === 'upload') {
-      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
     }
   }, [currentView]);
 
