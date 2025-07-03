@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,11 +14,15 @@ import { useRef } from "react";
 
 function Router() {
   const homeRef = useRef<{ goToHome: () => void }>(null);
+  const [location, setLocation] = useLocation();
 
   const handleHomeClick = () => {
     // If on home page, reset to upload view instead of reloading
-    if (homeRef.current) {
+    if (location === "/" && homeRef.current) {
       homeRef.current.goToHome();
+    } else {
+      // If on other pages, navigate to home normally
+      setLocation("/");
     }
   };
 
