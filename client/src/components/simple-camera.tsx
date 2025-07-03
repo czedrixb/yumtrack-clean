@@ -79,19 +79,29 @@ export default function SimpleCamera({ onImageCaptured, onCancel }: SimpleCamera
       return;
     }
 
-    // Use video's actual dimensions or fallback
-    const width = video.videoWidth || 640;
-    const height = video.videoHeight || 480;
+    // Get video dimensions
+    const videoWidth = video.videoWidth || 640;
+    const videoHeight = video.videoHeight || 480;
     
-    canvas.width = width;
-    canvas.height = height;
+    // Calculate the crop area (the white box overlay is 256x256px centered)
+    const cropSize = Math.min(videoWidth, videoHeight) * 0.7; // 70% of the smaller dimension
+    const cropX = (videoWidth - cropSize) / 2;
+    const cropY = (videoHeight - cropSize) / 2;
     
-    // Draw the current video frame
-    context.drawImage(video, 0, 0, width, height);
+    // Set canvas to crop size
+    canvas.width = cropSize;
+    canvas.height = cropSize;
+    
+    // Draw only the cropped area from the video
+    context.drawImage(
+      video, 
+      cropX, cropY, cropSize, cropSize, // source area (crop region)
+      0, 0, cropSize, cropSize // destination area (full canvas)
+    );
     
     // Convert to image data
     const imageData = canvas.toDataURL('image/jpeg', 0.8);
-    console.log('Image captured:', imageData.length);
+    console.log('Cropped image captured:', imageData.length);
     
     const compressedImage = await compressImage(imageData, 1024, 0.8);
     setCapturedImage(compressedImage);
@@ -174,9 +184,23 @@ export default function SimpleCamera({ onImageCaptured, onCancel }: SimpleCamera
               }}
             />
             
-            {/* Camera overlay */}
+            {/* Camera overlay - crop area indicator */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-64 h-64 border-2 border-white rounded-2xl opacity-50"></div>
+              <div className="relative">
+                {/* Main crop area */}
+                <div className="w-64 h-64 border-2 border-white rounded-2xl opacity-75"></div>
+                {/* Corner indicators */}
+                <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-2xl"></div>
+                <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-2xl"></div>
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-2xl"></div>
+                {/* Center instruction */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                    Center food here
+                  </div>
+                </div>
+              </div>
             </div>
             
             {/* Simple status indicator */}
