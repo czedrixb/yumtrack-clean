@@ -45,7 +45,11 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
         videoRef.current.srcObject = mediaStream;
         // Force video to play
         await videoRef.current.play().catch(console.error);
-        console.log('Camera stream started successfully');
+        console.log('Camera stream started successfully', {
+          streamActive: mediaStream.active,
+          videoTracks: mediaStream.getVideoTracks().length,
+          videoReady: videoRef.current.readyState
+        });
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
@@ -180,20 +184,31 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
             />
           </div>
         ) : (
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Camera overlay */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-64 h-64 border-2 border-white rounded-2xl opacity-50"></div>
-            </div>
-          </>
+          <div className="relative w-full h-full bg-black">
+            {stream ? (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Camera overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-64 h-64 border-2 border-white rounded-2xl opacity-50"></div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-white text-center">
+                  <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p>Starting camera...</p>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
