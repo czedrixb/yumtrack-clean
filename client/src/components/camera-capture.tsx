@@ -157,9 +157,26 @@ export default function CameraCapture({
     canvas.width = width;
     canvas.height = height;
 
-    // Clear canvas and draw video frame
-    context.clearRect(0, 0, width, height);
-    context.drawImage(video, 0, 0, width, height);
+    // Try ImageCapture API first (more reliable)
+    try {
+      if ('ImageCapture' in window && stream && stream.getVideoTracks().length > 0) {
+        const track = stream.getVideoTracks()[0];
+        const imageCapture = new (window as any).ImageCapture(track);
+        const bitmap = await imageCapture.grabFrame();
+        
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        context.drawImage(bitmap, 0, 0);
+        console.log('Used ImageCapture API:', bitmap.width, 'x', bitmap.height);
+      } else {
+        throw new Error('ImageCapture not available');
+      }
+    } catch (imageCaptureError) {
+      console.log('ImageCapture failed, using video element');
+      // Clear canvas and draw video frame
+      context.clearRect(0, 0, width, height);
+      context.drawImage(video, 0, 0, width, height);
+    }
 
     // Convert to blob and compress
     const imageData = canvas.toDataURL("image/jpeg", 0.8);
@@ -278,6 +295,16 @@ export default function CameraCapture({
                   height="100%"
                   style={{
                     objectFit: "cover",
+                    backgroundColor: "black"
+                  }}
+                />
+                
+                {/* Fallback canvas for preview if video doesn't work */}
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{
+                    display: videoRef.current?.videoWidth === 0 ? 'block' : 'none',
                     backgroundColor: "black"
                   }}
                 />
