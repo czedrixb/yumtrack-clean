@@ -22,17 +22,30 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   const startCamera = useCallback(async () => {
     try {
       setError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment', // Use back camera by default
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      });
+      let mediaStream;
+      
+      // Try with back camera first
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        });
+      } catch (err) {
+        // Fallback to any available camera
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true
+        });
+      }
       
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Force video to play
+        await videoRef.current.play().catch(console.error);
+        console.log('Camera stream started successfully');
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
@@ -172,8 +185,8 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
               ref={videoRef}
               autoPlay
               playsInline
+              muted
               className="w-full h-full object-cover"
-              onCanPlay={startCamera}
             />
             
             {/* Camera overlay */}
