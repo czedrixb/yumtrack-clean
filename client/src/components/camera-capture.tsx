@@ -45,44 +45,39 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
         const video = videoRef.current;
         video.srcObject = mediaStream;
         
-        // Add event listeners for debugging
-        video.addEventListener('loadedmetadata', () => {
-          console.log('Video metadata loaded', {
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight,
-            duration: video.duration
+        // Wait for video to be ready
+        const waitForVideo = () => {
+          return new Promise<void>((resolve) => {
+            const checkVideo = () => {
+              if (video.videoWidth > 0 && video.videoHeight > 0) {
+                console.log('Video ready with dimensions:', video.videoWidth, 'x', video.videoHeight);
+                resolve();
+              } else {
+                setTimeout(checkVideo, 100);
+              }
+            };
+            checkVideo();
           });
-        });
-        
-        video.addEventListener('canplay', () => {
-          console.log('Video can play');
-        });
-        
-        video.addEventListener('playing', () => {
-          console.log('Video is playing');
-        });
-        
-        // Force video to play
-        try {
-          await video.play();
-          console.log('Camera stream started successfully', {
-            streamActive: mediaStream.active,
-            videoTracks: mediaStream.getVideoTracks().length,
-            videoReady: video.readyState,
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight
-          });
-          
-          // Additional check after a short delay to ensure video is actually playing
-          setTimeout(() => {
-            if (video.videoWidth === 0 || video.videoHeight === 0) {
-              console.warn('Video dimensions are 0, attempting to refresh stream');
-              video.load();
+        };
+
+        video.addEventListener('loadedmetadata', async () => {
+          console.log('Video metadata loaded');
+          try {
+            await video.play();
+            await waitForVideo();
+            console.log('Camera stream ready for capture');
+          } catch (playError) {
+            console.error('Error playing video:', playError);
+            // Try without audio constraints
+            video.muted = true;
+            try {
+              await video.play();
+              console.log('Video playing after muting');
+            } catch (retryError) {
+              console.error('Retry failed:', retryError);
             }
-          }, 1000);
-        } catch (playError) {
-          console.error('Error playing video:', playError);
-        }
+          }
+        });
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
@@ -132,13 +127,27 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
       return;
     }
 
-    console.log('Video dimensions:', {
+    // Wait for video to be ready
+    if (video.videoWidth === 0 || video.videoHeight === 0 || video.readyState < 2) {
+      console.log('Video not ready, waiting...');
+      // Wait up to 3 seconds for video to be ready
+      for (let i = 0; i < 30; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        if (video.videoWidth > 0 && video.videoHeight > 0 && video.readyState >= 2) {
+          break;
+        }
+      }
+    }
+
+    console.log('Video state before capture:', {
       videoWidth: video.videoWidth,
       videoHeight: video.videoHeight,
-      readyState: video.readyState
+      readyState: video.readyState,
+      paused: video.paused,
+      currentTime: video.currentTime
     });
 
-    // Use default dimensions if video dimensions are 0
+    // Use video dimensions or fallback
     const width = video.videoWidth || 640;
     const height = video.videoHeight || 480;
 
@@ -146,7 +155,8 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
     canvas.width = width;
     canvas.height = height;
 
-    // Draw video frame to canvas
+    // Clear canvas and draw video frame
+    context.clearRect(0, 0, width, height);
     context.drawImage(video, 0, 0, width, height);
 
     // Convert to blob and compress
@@ -154,7 +164,7 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
     console.log('Image captured, data length:', imageData.length);
     
     const compressedImage = await compressImage(imageData, 1024, 0.8);
-    console.log('Image compressed');
+    console.log('Image compressed, final length:', compressedImage.length);
     
     setCapturedImage(compressedImage);
     stopCamera();
