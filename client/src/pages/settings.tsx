@@ -42,13 +42,7 @@ export default function Settings() {
     }
   };
 
-  const exportData = () => {
-    // In a real app, this would export user data
-    toast({
-      title: "Export started",
-      description: "Your data export will be ready shortly.",
-    });
-  };
+
 
   return (
     <main className="max-w-sm mx-auto px-4 py-6 space-y-6">
@@ -121,17 +115,6 @@ export default function Settings() {
           <CardTitle className="text-lg">Data Management</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={exportData}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            Export My Data
-          </Button>
-
           <Button
             variant="outline"
             className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
