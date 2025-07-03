@@ -100,29 +100,61 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   // Start camera automatically when component mounts in camera mode (no trigger)
   useEffect(() => {
     if (!trigger && isOpen && !capturedImage && !stream) {
+      console.log('Starting camera from useEffect');
       startCamera();
     }
   }, [isOpen, capturedImage, stream, trigger, startCamera]);
 
+  // Also try to start camera when dialog first opens
+  useEffect(() => {
+    if (isOpen && !stream && !capturedImage) {
+      console.log('Dialog opened, attempting to start camera');
+      setTimeout(() => {
+        startCamera();
+      }, 100);
+    }
+  }, [isOpen, stream, capturedImage, startCamera]);
+
   const capturePhoto = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    console.log('Attempting to capture photo...');
+    
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('Video or canvas ref not available');
+      return;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
 
-    if (!context) return;
+    if (!context) {
+      console.error('Canvas context not available');
+      return;
+    }
 
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    console.log('Video dimensions:', {
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      readyState: video.readyState
+    });
+
+    // Use default dimensions if video dimensions are 0
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+
+    // Set canvas dimensions
+    canvas.width = width;
+    canvas.height = height;
 
     // Draw video frame to canvas
-    context.drawImage(video, 0, 0);
+    context.drawImage(video, 0, 0, width, height);
 
     // Convert to blob and compress
     const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    console.log('Image captured, data length:', imageData.length);
+    
     const compressedImage = await compressImage(imageData, 1024, 0.8);
+    console.log('Image compressed');
     
     setCapturedImage(compressedImage);
     stopCamera();
@@ -277,7 +309,6 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
             <Button
               size="lg"
               onClick={capturePhoto}
-              disabled={!stream}
               className="w-16 h-16 rounded-full bg-white text-black hover:bg-white/90"
             >
               <Camera className="w-8 h-8" />
