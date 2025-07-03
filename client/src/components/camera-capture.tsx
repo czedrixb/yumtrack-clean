@@ -104,28 +104,6 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
     startCamera();
   }, [startCamera]);
 
-  if (trigger) {
-    return (
-      <>
-        <div onClick={() => setIsOpen(true)}>
-          {trigger}
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        {isOpen && (
-          <div className="fixed inset-0 bg-black z-50 flex flex-col">
-            <CameraCaptureContent />
-          </div>
-        )}
-      </>
-    );
-  }
-
   const CameraCaptureContent = () => (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Header */}
@@ -245,6 +223,24 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
       />
     </div>
   );
+
+  if (trigger) {
+    return (
+      <>
+        <div onClick={() => setIsOpen(true)}>
+          {trigger}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        {isOpen && <CameraCaptureContent />}
+      </>
+    );
+  }
 
   return <CameraCaptureContent />;
 }
