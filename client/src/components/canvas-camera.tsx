@@ -25,10 +25,25 @@ export default function CanvasCamera({ onImageCaptured, onCancel }: CanvasCamera
       
       console.log('Starting canvas camera...');
       
-      // Get media stream with simple constraints
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 }
-      });
+      // Get media stream with back camera, fallback to any camera
+      let mediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'environment', // Use back camera
+            width: 640, 
+            height: 480 
+          }
+        });
+      } catch (backCameraError) {
+        console.log('Back camera not available, using default camera');
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            width: 640, 
+            height: 480 
+          }
+        });
+      }
       
       console.log('MediaStream obtained for canvas camera');
       setStream(mediaStream);
@@ -45,9 +60,23 @@ export default function CanvasCamera({ onImageCaptured, onCancel }: CanvasCamera
             await video.play();
             console.log('Hidden video playing for canvas');
             
-            // Start canvas rendering loop
-            const renderLoop = () => {
+            // Start canvas rendering loop with optimized frame rate
+            let lastRenderTime = 0;
+            const targetFPS = 15; // Reduced from 60fps to 15fps for better performance
+            const frameInterval = 1000 / targetFPS;
+            
+            const renderLoop = (currentTime: number) => {
               if (!canvasRef.current || !video) return;
+              
+              // Throttle rendering to target FPS
+              if (currentTime - lastRenderTime < frameInterval) {
+                if (stream && stream.active) {
+                  animationFrameRef.current = requestAnimationFrame(renderLoop);
+                }
+                return;
+              }
+              
+              lastRenderTime = currentTime;
               
               const canvas = canvasRef.current;
               const context = canvas.getContext('2d');
@@ -75,7 +104,7 @@ export default function CanvasCamera({ onImageCaptured, onCancel }: CanvasCamera
               }
             };
             
-            renderLoop();
+            animationFrameRef.current = requestAnimationFrame(renderLoop);
           } catch (playError) {
             console.error('Failed to play hidden video:', playError);
             setError('Camera initialization failed');
