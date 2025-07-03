@@ -10,7 +10,11 @@ interface CameraCaptureProps {
   trigger?: React.ReactNode;
 }
 
-export default function CameraCapture({ onImageCaptured, onCancel, trigger }: CameraCaptureProps) {
+export default function CameraCapture({
+  onImageCaptured,
+  onCancel,
+  trigger,
+}: CameraCaptureProps) {
   const [isOpen, setIsOpen] = useState(!trigger);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -22,89 +26,62 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   const startCamera = useCallback(async () => {
     try {
       setError(null);
-      let mediaStream;
+      console.log('Starting camera...');
       
-      // Try with back camera first
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
-        });
-      } catch (err) {
-        // Fallback to any available camera
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: true
-        });
-      }
+      // Use very simple constraints first
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      });
       
+      console.log('MediaStream obtained:', mediaStream.active, mediaStream.getVideoTracks().length);
       setStream(mediaStream);
+      
       if (videoRef.current) {
         const video = videoRef.current;
+        console.log('Setting video source...');
         
-        // Clear any existing source
-        video.srcObject = null;
+        // Create a completely new video element approach
+        video.srcObject = mediaStream;
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
         
-        // Set up video with proper event handling
-        const initializeVideo = async () => {
-          video.srcObject = mediaStream;
-          video.muted = true;
-          video.playsInline = true;
-          video.autoplay = true;
-          
-          console.log('Video source set, waiting for loadstart...');
-          
+        // Use a promise to handle video loading properly
+        const playVideo = () => {
           return new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('Video initialization timeout'));
-            }, 10000);
-
-            const onLoadedMetadata = async () => {
-              console.log('Video metadata loaded:', {
-                videoWidth: video.videoWidth,
-                videoHeight: video.videoHeight,
-                readyState: video.readyState
-              });
-              
+            video.onloadedmetadata = async () => {
+              console.log('Metadata loaded:', video.videoWidth, 'x', video.videoHeight);
               try {
                 await video.play();
-                console.log('Video playing successfully');
-                clearTimeout(timeout);
+                console.log('Video playing');
                 resolve();
-              } catch (playError) {
-                console.error('Play error:', playError);
-                clearTimeout(timeout);
-                reject(playError);
+              } catch (playErr) {
+                console.error('Play failed:', playErr);
+                reject(playErr);
               }
             };
-
-            const onLoadStart = () => {
-              console.log('Video load started');
+            
+            video.onerror = (err) => {
+              console.error('Video error:', err);
+              reject(err);
             };
-
-            const onCanPlay = () => {
-              console.log('Video can play');
-            };
-
-            video.addEventListener('loadstart', onLoadStart, { once: true });
-            video.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
-            video.addEventListener('canplay', onCanPlay, { once: true });
           });
         };
-
-        initializeVideo().catch(console.error);
+        
+        await playVideo();
       }
     } catch (err) {
-      console.error('Error accessing camera:', err);
-      setError('Unable to access camera. Please check permissions or use gallery instead.');
+      console.error("Error accessing camera:", err);
+      setError("Unable to access camera. Please check permissions or use gallery instead.");
     }
   }, []);
 
   const stopCamera = useCallback(() => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
   }, [stream]);
@@ -112,7 +89,7 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   // Start camera automatically when component mounts in camera mode (no trigger)
   useEffect(() => {
     if (!trigger && isOpen && !capturedImage && !stream) {
-      console.log('Starting camera from useEffect');
+      console.log("Starting camera from useEffect");
       startCamera();
     }
   }, [isOpen, capturedImage, stream, trigger, startCamera]);
@@ -120,7 +97,7 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   // Also try to start camera when dialog first opens
   useEffect(() => {
     if (isOpen && !stream && !capturedImage) {
-      console.log('Dialog opened, attempting to start camera');
+      console.log("Dialog opened, attempting to start camera");
       setTimeout(() => {
         startCamera();
       }, 100);
@@ -128,40 +105,48 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   }, [isOpen, stream, capturedImage, startCamera]);
 
   const capturePhoto = useCallback(async () => {
-    console.log('Attempting to capture photo...');
-    
+    console.log("Attempting to capture photo...");
+
     if (!videoRef.current || !canvasRef.current) {
-      console.error('Video or canvas ref not available');
+      console.error("Video or canvas ref not available");
       return;
     }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext("2d");
 
     if (!context) {
-      console.error('Canvas context not available');
+      console.error("Canvas context not available");
       return;
     }
 
     // Wait for video to be ready
-    if (video.videoWidth === 0 || video.videoHeight === 0 || video.readyState < 2) {
-      console.log('Video not ready, waiting...');
+    if (
+      video.videoWidth === 0 ||
+      video.videoHeight === 0 ||
+      video.readyState < 2
+    ) {
+      console.log("Video not ready, waiting...");
       // Wait up to 3 seconds for video to be ready
       for (let i = 0; i < 30; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        if (video.videoWidth > 0 && video.videoHeight > 0 && video.readyState >= 2) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        if (
+          video.videoWidth > 0 &&
+          video.videoHeight > 0 &&
+          video.readyState >= 2
+        ) {
           break;
         }
       }
     }
 
-    console.log('Video state before capture:', {
+    console.log("Video state before capture:", {
       videoWidth: video.videoWidth,
       videoHeight: video.videoHeight,
       readyState: video.readyState,
       paused: video.paused,
-      currentTime: video.currentTime
+      currentTime: video.currentTime,
     });
 
     // Use video dimensions or fallback
@@ -177,28 +162,31 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
     context.drawImage(video, 0, 0, width, height);
 
     // Convert to blob and compress
-    const imageData = canvas.toDataURL('image/jpeg', 0.8);
-    console.log('Image captured, data length:', imageData.length);
-    
+    const imageData = canvas.toDataURL("image/jpeg", 0.8);
+    console.log("Image captured, data length:", imageData.length);
+
     const compressedImage = await compressImage(imageData, 1024, 0.8);
-    console.log('Image compressed, final length:', compressedImage.length);
-    
+    console.log("Image compressed, final length:", compressedImage.length);
+
     setCapturedImage(compressedImage);
     stopCamera();
   }, [stopCamera]);
 
-  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const imageData = e.target?.result as string;
-      const compressedImage = await compressImage(imageData, 1024, 0.8);
-      setCapturedImage(compressedImage);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const imageData = e.target?.result as string;
+        const compressedImage = await compressImage(imageData, 1024, 0.8);
+        setCapturedImage(compressedImage);
+      };
+      reader.readAsDataURL(file);
+    },
+    [],
+  );
 
   const handleConfirm = useCallback(() => {
     if (capturedImage) {
@@ -232,7 +220,7 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
         >
           <X className="w-6 h-6" />
         </Button>
-        
+
         {!capturedImage && (
           <Button
             variant="ghost"
@@ -255,7 +243,9 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
                   <X className="w-8 h-8 text-destructive" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">Camera Access Error</h3>
+                  <h3 className="font-semibold text-foreground">
+                    Camera Access Error
+                  </h3>
                   <p className="text-sm text-muted-foreground mt-1">{error}</p>
                 </div>
                 <Button
@@ -284,13 +274,14 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover"
+                  width="100%"
+                  height="100%"
                   style={{
-                    backgroundColor: 'black',
-                    display: 'block'
+                    objectFit: "cover",
+                    backgroundColor: "black"
                   }}
                 />
-                
+
                 {/* Camera overlay */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="w-64 h-64 border-2 border-white rounded-2xl opacity-50"></div>
@@ -298,11 +289,22 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
 
                 {/* Debug overlay */}
                 <div className="absolute top-4 left-4 bg-black/50 text-white p-2 rounded text-xs">
-                  Stream: {stream ? 'Active' : 'Inactive'}
+                  Stream:{" "}
+                  {stream
+                    ? `${stream.getVideoTracks().length} video track(s)`
+                    : "Inactive"}
                   <br />
-                  Video: {videoRef.current ? `${videoRef.current.videoWidth}x${videoRef.current.videoHeight}` : 'N/A'}
+                  Video:{" "}
+                  {videoRef.current
+                    ? `${videoRef.current.videoWidth}x${videoRef.current.videoHeight}`
+                    : "N/A"}
                   <br />
-                  Ready: {videoRef.current ? videoRef.current.readyState : 'N/A'}
+                  Ready:{" "}
+                  {videoRef.current ? videoRef.current.readyState : "N/A"}
+                  <br />
+                  Playing: {videoRef.current ? !videoRef.current.paused : "N/A"}
+                  <br />
+                  Error: {error || "None"}
                 </div>
               </>
             ) : (
@@ -366,9 +368,7 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
   if (trigger) {
     return (
       <>
-        <div onClick={() => fileInputRef.current?.click()}>
-          {trigger}
-        </div>
+        <div onClick={() => fileInputRef.current?.click()}>{trigger}</div>
         <input
           ref={fileInputRef}
           type="file"
