@@ -5,22 +5,46 @@ import { usePWA } from "@/hooks/use-pwa";
 
 export default function PWAInstallBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  const { canInstall, install } = usePWA();
+  const { canInstall, install, isInstalled } = usePWA();
 
   useEffect(() => {
     // Show banner if app can be installed and user hasn't dismissed it
     const dismissed = localStorage.getItem('nutrisnap-install-dismissed');
-    if (canInstall && !dismissed) {
+    
+    // Always show banner after 3 seconds if not installed and not dismissed
+    if (!isInstalled && !dismissed) {
       const timer = setTimeout(() => setIsVisible(true), 3000);
       return () => clearTimeout(timer);
     }
-  }, [canInstall]);
+  }, [canInstall, isInstalled]);
 
   const handleInstall = async () => {
-    const installed = await install();
-    if (installed) {
-      setIsVisible(false);
+    if (canInstall) {
+      const installed = await install();
+      if (installed) {
+        setIsVisible(false);
+        return;
+      }
     }
+    
+    // Show manual install instructions if automatic install isn't available
+    showManualInstallInstructions();
+  };
+
+  const showManualInstallInstructions = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    let instructions = "";
+    if (isIOS) {
+      instructions = "Tap the Share button in Safari, then select 'Add to Home Screen'";
+    } else if (isAndroid) {
+      instructions = "Tap the menu (⋮) in Chrome, then select 'Add to Home screen'";
+    } else {
+      instructions = "Look for the install button in your browser's address bar";
+    }
+    
+    alert(`To install NutriSnap:\n\n${instructions}`);
   };
 
   const handleDismiss = () => {
@@ -28,7 +52,7 @@ export default function PWAInstallBanner() {
     localStorage.setItem('nutrisnap-install-dismissed', 'true');
   };
 
-  if (!isVisible || !canInstall) {
+  if (!isVisible || isInstalled) {
     return null;
   }
 

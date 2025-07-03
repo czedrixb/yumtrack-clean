@@ -5,12 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { usePWA } from "@/hooks/use-pwa";
+import { Download } from "lucide-react";
 
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [analytics, setAnalytics] = useState(true);
   const { toast } = useToast();
+  const { canInstall, install, isInstalled } = usePWA();
 
   useEffect(() => {
     // Load settings from localStorage
@@ -40,6 +43,34 @@ export default function Settings() {
         description: "All analysis history has been removed.",
       });
     }
+  };
+
+  const handleInstallApp = async () => {
+    if (canInstall) {
+      const installed = await install();
+      if (installed) {
+        toast({
+          title: "App installed",
+          description: "NutriSnap has been added to your home screen.",
+        });
+        return;
+      }
+    }
+    
+    // Show manual install instructions
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    let instructions = "";
+    if (isIOS) {
+      instructions = "1. Tap the Share button (□↗) in Safari\n2. Scroll down and tap 'Add to Home Screen'\n3. Tap 'Add' to confirm";
+    } else if (isAndroid) {
+      instructions = "1. Tap the menu (⋮) in Chrome\n2. Tap 'Add to Home screen'\n3. Tap 'Add' to confirm";
+    } else {
+      instructions = "Look for the install button (⊕) in your browser's address bar, or check the browser menu for 'Install app' option.";
+    }
+    
+    alert(`To install NutriSnap as an app:\n\n${instructions}`);
   };
 
 
@@ -108,6 +139,28 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* App Installation */}
+      {!isInstalled && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Install App</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="default"
+              className="w-full justify-start"
+              onClick={handleInstallApp}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {canInstall ? "Install NutriSnap" : "Get Install Instructions"}
+            </Button>
+            <p className="text-sm text-muted-foreground mt-2">
+              Install NutriSnap on your device for faster access and an app-like experience
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Data Management */}
       <Card>
