@@ -43,49 +43,58 @@ export default function CameraCapture({ onImageCaptured, onCancel, trigger }: Ca
       setStream(mediaStream);
       if (videoRef.current) {
         const video = videoRef.current;
-        video.srcObject = mediaStream;
         
-        // Wait for video to be ready
-        const waitForVideo = () => {
-          return new Promise<void>((resolve) => {
-            const checkVideo = () => {
-              if (video.videoWidth > 0 && video.videoHeight > 0) {
-                console.log('Video ready with dimensions:', video.videoWidth, 'x', video.videoHeight);
+        // Clear any existing source
+        video.srcObject = null;
+        
+        // Set up video with proper event handling
+        const initializeVideo = async () => {
+          video.srcObject = mediaStream;
+          video.muted = true;
+          video.playsInline = true;
+          video.autoplay = true;
+          
+          console.log('Video source set, waiting for loadstart...');
+          
+          return new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('Video initialization timeout'));
+            }, 10000);
+
+            const onLoadedMetadata = async () => {
+              console.log('Video metadata loaded:', {
+                videoWidth: video.videoWidth,
+                videoHeight: video.videoHeight,
+                readyState: video.readyState
+              });
+              
+              try {
+                await video.play();
+                console.log('Video playing successfully');
+                clearTimeout(timeout);
                 resolve();
-              } else {
-                setTimeout(checkVideo, 100);
+              } catch (playError) {
+                console.error('Play error:', playError);
+                clearTimeout(timeout);
+                reject(playError);
               }
             };
-            checkVideo();
+
+            const onLoadStart = () => {
+              console.log('Video load started');
+            };
+
+            const onCanPlay = () => {
+              console.log('Video can play');
+            };
+
+            video.addEventListener('loadstart', onLoadStart, { once: true });
+            video.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+            video.addEventListener('canplay', onCanPlay, { once: true });
           });
         };
 
-        video.addEventListener('loadedmetadata', async () => {
-          console.log('Video metadata loaded');
-          try {
-            video.muted = true; // Ensure muted for autoplay
-            await video.play();
-            await waitForVideo();
-            console.log('Camera stream ready for capture');
-          } catch (playError) {
-            console.error('Error playing video:', playError);
-          }
-        });
-
-        // Ensure video keeps playing
-        video.addEventListener('pause', () => {
-          console.log('Video paused, attempting to resume');
-          video.play().catch(console.error);
-        });
-
-        // Force refresh after stream is set
-        setTimeout(() => {
-          if (video.srcObject === mediaStream) {
-            video.load();
-            video.play().catch(console.error);
-            console.log('Forced video refresh');
-          }
-        }, 500);
+        initializeVideo().catch(console.error);
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
