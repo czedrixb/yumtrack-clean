@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Camera, Image, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,7 +44,9 @@ export default function Home() {
     onSuccess: (result) => {
       setAnalysisResult(result);
       setCurrentView('results');
+      // Invalidate both queries to update home page data
       queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
     },
     onError: (error) => {
       toast({
@@ -70,7 +72,16 @@ export default function Home() {
     setCurrentView('upload');
     setSelectedImage(null);
     setAnalysisResult(null);
+    // Refresh recent analyses when returning to home
+    queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
   };
+
+  // Refetch recent analyses when returning to home view
+  useEffect(() => {
+    if (currentView === 'upload') {
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent'] });
+    }
+  }, [currentView]);
 
   if (currentView === 'camera') {
     return (
