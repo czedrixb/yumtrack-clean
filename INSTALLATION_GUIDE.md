@@ -41,8 +41,6 @@ Once installed, you'll have:
 
 - ✅ **App icon** on your home screen or desktop
 - ✅ **Full-screen experience** without browser interface
-- ✅ **Offline functionality** for basic features
-- ✅ **Push notifications** (if enabled in settings)
 - ✅ **Automatic updates** when new features are released
 
 ## Features Overview
@@ -52,7 +50,6 @@ Once installed, you'll have:
 - **AI Food Analysis**: Get instant nutritional breakdowns
 - **History Tracking**: Review past food analyses
 - **Statistics Dashboard**: Track your nutrition over time
-- **Offline Support**: Basic functionality works without internet
 
 ### Mobile-Optimized Design
 - **Touch-friendly interface** designed for mobile devices
@@ -88,9 +85,7 @@ Once installed, you'll have:
 - Check the **Help section** for common questions
 
 ### Additional Features
-- **Export/Import**: Save your nutrition data
 - **Dark Mode**: Switch themes in Settings
-- **Notifications**: Enable alerts for new features
 
 ## Privacy & Security
 
