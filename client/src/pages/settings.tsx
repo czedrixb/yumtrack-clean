@@ -72,15 +72,12 @@ export default function Settings() {
             title: "App installed",
             description: "YumTrack has been added to your home screen.",
           });
-          return;
         }
       } catch (error) {
         console.error('Installation failed:', error);
       }
     }
-    
-    // If automatic install isn't available, show manual instructions
-    setShowInstallModal(true);
+    // If canInstall is false, do nothing - just attempt the installation
   };
 
   const getInstallInstructions = () => {
@@ -182,7 +179,7 @@ export default function Settings() {
               onClick={handleInstallApp}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download
+              Install
             </Button>
             <p className="text-sm text-muted-foreground mt-2">
               Install YumTrack on your device for faster access and an app-like experience
