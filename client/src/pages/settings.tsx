@@ -139,9 +139,14 @@ export default function Settings() {
       const templateID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
       const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
+      console.log('EmailJS Config:', { serviceID, templateID, publicKey });
+
       if (!serviceID || !templateID || !publicKey) {
         throw new Error('EmailJS configuration missing');
       }
+
+      // Initialize EmailJS with public key
+      emailjs.init(publicKey);
 
       const templateParams = {
         from_name: values.name,
@@ -152,7 +157,10 @@ export default function Settings() {
         subject: `YumTrack Support: Contact from ${values.name}`
       };
 
-      await emailjs.send(serviceID, templateID, templateParams, publicKey);
+      console.log('Sending email with params:', templateParams);
+
+      const result = await emailjs.send(serviceID, templateID, templateParams);
+      console.log('EmailJS Success:', result);
       
       toast({
         title: "Message sent",
@@ -163,6 +171,7 @@ export default function Settings() {
       setShowContactModal(false);
     } catch (error) {
       console.error('EmailJS error:', error);
+      console.error('Error details:', JSON.stringify(error));
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
