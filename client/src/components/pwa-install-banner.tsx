@@ -21,15 +21,12 @@ export default function PWAInstallBanner() {
   }, [canInstall, isInstalled]);
 
   const handleInstall = async () => {
+    // Always try automatic installation first if available
     if (canInstall) {
       try {
         const installed = await install();
         if (installed) {
           setIsVisible(false);
-          // Show success message
-          setTimeout(() => {
-            alert('YumTrack has been installed! Look for the app icon on your home screen.');
-          }, 500);
           return;
         }
       } catch (error) {
@@ -37,7 +34,8 @@ export default function PWAInstallBanner() {
       }
     }
     
-    // Show manual install instructions modal for immediate guidance
+    // If automatic install isn't available or failed, hide banner and show modal with instructions
+    setIsVisible(false);
     setShowInstallModal(true);
   };
 

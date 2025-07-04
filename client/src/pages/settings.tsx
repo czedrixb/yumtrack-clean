@@ -70,7 +70,7 @@ export default function Settings() {
       if (installed) {
         toast({
           title: "App installed",
-          description: "NutriSnap has been added to your home screen.",
+          description: "YumTrack has been added to your home screen.",
         });
         return;
       }
@@ -120,7 +120,7 @@ export default function Settings() {
     <main className="max-w-sm mx-auto px-4 py-6 space-y-6">
       <header className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground text-sm">Customize your NutriSnap experience</p>
+        <p className="text-muted-foreground text-sm">Customize your YumTrack experience</p>
       </header>
 
       {/* App Settings */}
@@ -275,7 +275,7 @@ export default function Settings() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
               </svg>
             </div>
-            <h3 className="font-semibold text-foreground">NutriSnap</h3>
+            <h3 className="font-semibold text-foreground">YumTrack</h3>
             <p className="text-sm text-muted-foreground">Version 1.0.0</p>
             <p className="text-xs text-muted-foreground">AI-powered nutrition analysis</p>
           </div>

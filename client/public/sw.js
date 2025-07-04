@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutrisnap-v1';
+const CACHE_NAME = 'yumtrack-v1';
 const urlsToCache = [
   '/',
   '/manifest.json',

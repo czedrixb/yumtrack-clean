@@ -24,11 +24,11 @@
   --ring: hsl(30, 18%, 13%);
   --radius: 0.75rem;
   
-  /* Custom colors for NutriSnap */
-  --nutrisnap-neutral-50: hsl(248, 50%, 98%);
-  --nutrisnap-neutral-100: hsl(248, 24%, 95%);
-  --nutrisnap-neutral-600: hsl(215, 16%, 47%);
-  --nutrisnap-neutral-800: hsl(222, 47%, 11%);
+  /* Custom colors for YumTrack */
+  --yumtrack-neutral-50: hsl(248, 50%, 98%);
+  --yumtrack-neutral-100: hsl(248, 24%, 95%);
+  --yumtrack-neutral-600: hsl(215, 16%, 47%);
+  --yumtrack-neutral-800: hsl(222, 47%, 11%);
 }
 
 .dark {
