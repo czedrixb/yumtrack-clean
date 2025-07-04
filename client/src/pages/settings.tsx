@@ -134,10 +134,10 @@ export default function Settings() {
   const onContactSubmit = async (values: z.infer<typeof contactSchema>) => {
     setIsSubmitting(true);
     try {
-      // EmailJS configuration from environment variables
-      const serviceID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const templateID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      // EmailJS configuration - temporary hardcoded values for testing
+      const serviceID = 'service_98xbwrl';
+      const templateID = 'template_a9bagiw';
+      const publicKey = 'CQ8ikKs9ILlgDBEPm';
 
       console.log('EmailJS Config:', { serviceID, templateID, publicKey });
 
