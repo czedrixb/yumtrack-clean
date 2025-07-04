@@ -13,7 +13,7 @@ export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
+
   const { toast } = useToast();
   const { canInstall, install, isInstalled } = usePWA();
 
@@ -103,44 +103,11 @@ export default function Settings() {
       console.error('Manual install prompt failed:', error);
     }
     
-    // If nothing worked, show install instructions
-    console.log('Showing install instructions as fallback');
-    setShowInstallModal(true);
+    // If nothing worked, just log it - don't show modal
+    console.log('Install not available on this device/browser');
   };
 
-  const getInstallInstructions = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    
-    if (isIOS) {
-      return {
-        title: "Install on iOS",
-        steps: [
-          "Tap the Share button (□↗) in Safari",
-          "Scroll down and tap 'Add to Home Screen'",
-          "Tap 'Add' to confirm"
-        ]
-      };
-    } else if (isAndroid) {
-      return {
-        title: "Install on Android",
-        steps: [
-          "Tap the menu (⋮) in Chrome",
-          "Tap 'Add to Home screen'",
-          "Tap 'Add' to confirm"
-        ]
-      };
-    } else {
-      return {
-        title: "Install on Desktop",
-        steps: [
-          "Look for the install button (⊕) in your browser's address bar",
-          "Or check the browser menu for 'Install app' option",
-          "Click to install the app"
-        ]
-      };
-    }
-  };
+
 
 
 
@@ -213,33 +180,7 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground mt-2">
               Install YumTrack on your device for faster access and an app-like experience
             </p>
-            
-            {/* Install Instructions Modal */}
-            <AlertDialog open={showInstallModal} onOpenChange={setShowInstallModal}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{getInstallInstructions().title}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Follow these steps to install YumTrack as an app on your device:
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="space-y-3 my-4">
-                  {getInstallInstructions().steps.map((step, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <p className="text-sm text-foreground flex-1">{step}</p>
-                    </div>
-                  ))}
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogAction onClick={() => setShowInstallModal(false)}>
-                    Got it
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+
           </CardContent>
         </Card>
       )}
