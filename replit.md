@@ -1,8 +1,8 @@
-# NutriSnap - AI Food Nutrition Analyzer
+# YumTrack - AI Food Nutrition Analyzer
 
 ## Overview
 
-NutriSnap is a Progressive Web Application (PWA) that uses AI-powered computer vision to analyze food images and provide detailed nutritional information. Users can take photos of their meals and receive instant calorie counts, macronutrient breakdowns, and health insights powered by OpenAI's GPT-4V model.
+YumTrack is a Progressive Web Application (PWA) that uses AI-powered computer vision to analyze food images and provide detailed nutritional information. Users can take photos of their meals and receive instant calorie counts, macronutrient breakdowns, and health insights powered by OpenAI's GPT-4V model.
 
 ## System Architecture
 
@@ -108,6 +108,7 @@ The application follows a modern full-stack architecture with clear separation o
 
 ```
 Changelog:
+- July 04, 2025. Renamed app from NutriSnap to YumTrack
 - July 03, 2025. Initial setup
 ```
 

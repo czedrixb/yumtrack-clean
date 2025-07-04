@@ -1,6 +1,6 @@
 {
-  "name": "NutriSnap - AI Food Nutrition Analyzer",
-  "short_name": "NutriSnap",
+  "name": "YumTrack - AI Food Nutrition Analyzer",
+  "short_name": "YumTrack",
   "description": "AI-powered food recognition and nutrition analysis app",
   "start_url": "/",
   "display": "standalone",

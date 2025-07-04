@@ -28,7 +28,7 @@ export default function PWAInstallBanner() {
           setIsVisible(false);
           // Show success message
           setTimeout(() => {
-            alert('NutriSnap has been installed! Look for the app icon on your home screen.');
+            alert('YumTrack has been installed! Look for the app icon on your home screen.');
           }, 500);
           return;
         }
@@ -122,7 +122,7 @@ export default function PWAInstallBanner() {
           <AlertDialogHeader>
             <AlertDialogTitle>{getInstallInstructions().title}</AlertDialogTitle>
             <AlertDialogDescription>
-              Follow these steps to install NutriSnap as an app on your device:
+              Follow these steps to install YumTrack as an app on your device:
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 my-4">

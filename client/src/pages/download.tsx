@@ -16,7 +16,7 @@ export default function DownloadPage() {
         const installed = await install();
         if (installed) {
           setTimeout(() => {
-            alert('NutriSnap has been installed successfully! Look for the app icon on your home screen.');
+            alert('YumTrack has been installed successfully! Look for the app icon on your home screen.');
           }, 500);
           return;
         }
@@ -81,7 +81,7 @@ export default function DownloadPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-6">
-              NutriSnap is already installed on your device. Look for the app icon on your home screen.
+              YumTrack is already installed on your device. Look for the app icon on your home screen.
             </p>
             <Button onClick={() => window.location.href = "/"} className="w-full">
               Open App
@@ -101,7 +101,7 @@ export default function DownloadPage() {
             <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
               <Download className="w-10 h-10 text-primary-foreground" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Download NutriSnap</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Download YumTrack</h1>
             <p className="text-xl text-gray-600 mb-6">
               AI-powered food nutrition analysis app
             </p>
@@ -186,7 +186,7 @@ export default function DownloadPage() {
             <CardContent className="text-center pt-6">
               <h3 className="text-lg font-semibold mb-4">What is a Progressive Web App?</h3>
               <p className="text-muted-foreground mb-4">
-                NutriSnap is a Progressive Web App (PWA) that combines the best of web and mobile apps. 
+                YumTrack is a Progressive Web App (PWA) that combines the best of web and mobile apps. 
                 It installs directly from your browser without needing an app store.
               </p>
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -218,7 +218,7 @@ export default function DownloadPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{getInstallInstructions().title}</AlertDialogTitle>
             <AlertDialogDescription>
-              Follow these steps to install NutriSnap as an app on your device:
+              Follow these steps to install YumTrack as an app on your device:
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 my-4">

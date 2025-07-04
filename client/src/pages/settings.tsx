@@ -179,10 +179,10 @@ export default function Settings() {
               onClick={handleInstallApp}
             >
               <Download className="w-4 h-4 mr-2" />
-              {canInstall ? "Install NutriSnap" : "Get Install Instructions"}
+              {canInstall ? "Install YumTrack" : "Get Install Instructions"}
             </Button>
             <p className="text-sm text-muted-foreground mt-2">
-              Install NutriSnap on your device for faster access and an app-like experience
+              Install YumTrack on your device for faster access and an app-like experience
             </p>
             
             <Link href="/download">
@@ -198,7 +198,7 @@ export default function Settings() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>{getInstallInstructions().title}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Follow these steps to install NutriSnap as an app on your device:
+                    Follow these steps to install YumTrack as an app on your device:
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="space-y-3 my-4">

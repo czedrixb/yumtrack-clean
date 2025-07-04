@@ -1,8 +1,8 @@
-# NutriSnap PWA Installation Guide
+# YumTrack PWA Installation Guide
 
-## What is NutriSnap?
+## What is YumTrack?
 
-NutriSnap is a Progressive Web App (PWA) that uses AI to analyze food photos and provide detailed nutritional information. It works like a native mobile app but installs directly through your web browser.
+YumTrack is a Progressive Web App (PWA) that uses AI to analyze food photos and provide detailed nutritional information. It works like a native mobile app but installs directly through your web browser.
 
 ## Installation Instructions
 
@@ -10,7 +10,7 @@ NutriSnap is a Progressive Web App (PWA) that uses AI to analyze food photos and
 
 1. **Open Safari** on your iPhone or iPad
 2. **Navigate** to the NutriSnap web app
-3. **Look for the install banner** at the top of the screen that says "Install NutriSnap"
+3. **Look for the install banner** at the top of the screen that says "Install YumTrack"
 4. **Tap "Install"** in the banner, or follow these manual steps:
    - Tap the **Share button** (□↗) in Safari's toolbar
    - Scroll down in the share menu
