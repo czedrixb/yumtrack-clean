@@ -11,7 +11,6 @@ import { Download } from "lucide-react";
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [analytics, setAnalytics] = useState(true);
   const { toast } = useToast();
   const { canInstall, install, isInstalled } = usePWA();
 
@@ -19,11 +18,9 @@ export default function Settings() {
     // Load settings from localStorage
     const savedNotifications = localStorage.getItem('nutrisnap-notifications');
     const savedDarkMode = localStorage.getItem('nutrisnap-dark-mode');
-    const savedAnalytics = localStorage.getItem('nutrisnap-analytics');
 
     if (savedNotifications !== null) setNotifications(JSON.parse(savedNotifications));
     if (savedDarkMode !== null) setDarkMode(JSON.parse(savedDarkMode));
-    if (savedAnalytics !== null) setAnalytics(JSON.parse(savedAnalytics));
   }, []);
 
   const updateSetting = (key: string, value: boolean) => {
@@ -121,22 +118,7 @@ export default function Settings() {
             />
           </div>
 
-          <Separator />
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="analytics">Usage Analytics</Label>
-              <p className="text-sm text-muted-foreground">Help improve the app</p>
-            </div>
-            <Switch
-              id="analytics"
-              checked={analytics}
-              onCheckedChange={(checked) => {
-                setAnalytics(checked);
-                updateSetting('nutrisnap-analytics', checked);
-              }}
-            />
-          </div>
         </CardContent>
       </Card>
 
