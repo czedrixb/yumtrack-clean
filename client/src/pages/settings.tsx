@@ -7,8 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
-import { Download, ExternalLink } from "lucide-react";
-import { Link } from "wouter";
+import { Download } from "lucide-react";
 
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
@@ -184,13 +183,6 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground mt-2">
               Install YumTrack on your device for faster access and an app-like experience
             </p>
-            
-            <Link href="/download">
-              <Button variant="outline" size="sm" className="mt-3">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View Download Page
-              </Button>
-            </Link>
             
             {/* Install Instructions Modal */}
             <AlertDialog open={showInstallModal} onOpenChange={setShowInstallModal}>
