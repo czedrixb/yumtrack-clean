@@ -13,6 +13,7 @@ export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const { toast } = useToast();
   const { canInstall, install, isInstalled } = usePWA();
 
@@ -74,20 +75,42 @@ export default function Settings() {
       }
     }
     
-    // Show manual install instructions
+    // Show manual install instructions modal
+    setShowInstallModal(true);
+  };
+
+  const getInstallInstructions = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
     
-    let instructions = "";
     if (isIOS) {
-      instructions = "1. Tap the Share button (□↗) in Safari\n2. Scroll down and tap 'Add to Home Screen'\n3. Tap 'Add' to confirm";
+      return {
+        title: "Install on iOS",
+        steps: [
+          "Tap the Share button (□↗) in Safari",
+          "Scroll down and tap 'Add to Home Screen'",
+          "Tap 'Add' to confirm"
+        ]
+      };
     } else if (isAndroid) {
-      instructions = "1. Tap the menu (⋮) in Chrome\n2. Tap 'Add to Home screen'\n3. Tap 'Add' to confirm";
+      return {
+        title: "Install on Android",
+        steps: [
+          "Tap the menu (⋮) in Chrome",
+          "Tap 'Add to Home screen'",
+          "Tap 'Add' to confirm"
+        ]
+      };
     } else {
-      instructions = "Look for the install button (⊕) in your browser's address bar, or check the browser menu for 'Install app' option.";
+      return {
+        title: "Install on Desktop",
+        steps: [
+          "Look for the install button (⊕) in your browser's address bar",
+          "Or check the browser menu for 'Install app' option",
+          "Click to install the app"
+        ]
+      };
     }
-    
-    alert(`To install NutriSnap as an app:\n\n${instructions}`);
   };
 
 
@@ -160,6 +183,33 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground mt-2">
               Install NutriSnap on your device for faster access and an app-like experience
             </p>
+            
+            {/* Install Instructions Modal */}
+            <AlertDialog open={showInstallModal} onOpenChange={setShowInstallModal}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{getInstallInstructions().title}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Follow these steps to install NutriSnap as an app on your device:
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-3 my-4">
+                  {getInstallInstructions().steps.map((step, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <p className="text-sm text-foreground flex-1">{step}</p>
+                    </div>
+                  ))}
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogAction onClick={() => setShowInstallModal(false)}>
+                    Got it
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       )}
