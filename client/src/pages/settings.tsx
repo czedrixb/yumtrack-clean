@@ -65,17 +65,21 @@ export default function Settings() {
 
   const handleInstallApp = async () => {
     if (canInstall) {
-      const installed = await install();
-      if (installed) {
-        toast({
-          title: "App installed",
-          description: "YumTrack has been added to your home screen.",
-        });
-        return;
+      try {
+        const installed = await install();
+        if (installed) {
+          toast({
+            title: "App installed",
+            description: "YumTrack has been added to your home screen.",
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Installation failed:', error);
       }
     }
     
-    // Show manual install instructions modal
+    // If automatic install isn't available, show manual instructions
     setShowInstallModal(true);
   };
 
@@ -178,7 +182,7 @@ export default function Settings() {
               onClick={handleInstallApp}
             >
               <Download className="w-4 h-4 mr-2" />
-              {canInstall ? "Install YumTrack" : "Get Install Instructions"}
+              Download
             </Button>
             <p className="text-sm text-muted-foreground mt-2">
               Install YumTrack on your device for faster access and an app-like experience
