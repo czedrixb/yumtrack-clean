@@ -89,7 +89,6 @@ export default function PWAInstallBanner() {
             <Download className="w-6 h-6" />
             <div>
               <div className="text-sm font-medium">Get the App</div>
-              <div className="text-xs opacity-90">Install for offline access</div>
             </div>
           </div>
           <div className="flex space-x-2">

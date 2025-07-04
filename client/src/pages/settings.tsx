@@ -64,9 +64,11 @@ export default function Settings() {
   };
 
   const handleInstallApp = async () => {
+    console.log('Install button clicked, canInstall:', canInstall);
     if (canInstall) {
       try {
         const installed = await install();
+        console.log('Installation result:', installed);
         if (installed) {
           toast({
             title: "App installed",
@@ -76,8 +78,9 @@ export default function Settings() {
       } catch (error) {
         console.error('Installation failed:', error);
       }
+    } else {
+      console.log('Install not available');
     }
-    // If canInstall is false, do nothing - just attempt the installation
   };
 
   const getInstallInstructions = () => {
@@ -177,6 +180,7 @@ export default function Settings() {
               variant="default"
               className="w-full justify-start"
               onClick={handleInstallApp}
+              disabled={false}
             >
               <Download className="w-4 h-4 mr-2" />
               Install
