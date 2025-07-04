@@ -128,8 +128,8 @@ export default function Settings() {
           <CardTitle className="text-lg">App Preferences</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-0.5 flex-1">
               <Label htmlFor="notifications">Push Notifications</Label>
               <p className="text-sm text-muted-foreground">Get notified about new features</p>
             </div>
@@ -145,8 +145,8 @@ export default function Settings() {
 
           <Separator />
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-0.5 flex-1">
               <Label htmlFor="dark-mode">Dark Mode</Label>
               <p className="text-sm text-muted-foreground">Switch to dark theme</p>
             </div>
