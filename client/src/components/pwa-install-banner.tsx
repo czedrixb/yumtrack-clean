@@ -21,7 +21,6 @@ export default function PWAInstallBanner() {
   }, [canInstall, isInstalled]);
 
   const handleInstall = async () => {
-    // Always try automatic installation first if available
     if (canInstall) {
       try {
         const installed = await install();
@@ -34,9 +33,9 @@ export default function PWAInstallBanner() {
       }
     }
     
-    // If automatic install isn't available or failed, hide banner and show modal with instructions
+    // If automatic install isn't available, just hide the banner
+    // Don't show modal instructions - user can access them through Settings
     setIsVisible(false);
-    setShowInstallModal(true);
   };
 
   const getInstallInstructions = () => {
