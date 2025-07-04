@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
@@ -11,6 +12,7 @@ import { Download } from "lucide-react";
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const { toast } = useToast();
   const { canInstall, install, isInstalled } = usePWA();
 
@@ -31,31 +33,32 @@ export default function Settings() {
     });
   };
 
-  const clearHistory = async () => {
-    if (confirm("Are you sure you want to clear all analysis history? This action cannot be undone.")) {
-      try {
-        const response = await fetch('/api/food-analyses', {
-          method: 'DELETE',
-        });
+  const handleClearHistory = async () => {
+    setIsClearing(true);
+    try {
+      const response = await fetch('/api/food-analyses', {
+        method: 'DELETE',
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to clear history');
-        }
-
-        toast({
-          title: "History cleared",
-          description: "All analysis history has been removed.",
-        });
-
-        // Refresh the cache to update any displayed data
-        window.location.reload();
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to clear history. Please try again.",
-          variant: "destructive",
-        });
+      if (!response.ok) {
+        throw new Error('Failed to clear history');
       }
+
+      toast({
+        title: "History cleared",
+        description: "All analysis history has been removed.",
+      });
+
+      // Refresh the cache to update any displayed data
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear history. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -167,16 +170,37 @@ export default function Settings() {
           <CardTitle className="text-lg">Data Management</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-            onClick={clearHistory}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-            </svg>
-            Clear All History
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                Clear All History
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear All History</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to clear all analysis history? This will permanently delete all your food analyses and cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleClearHistory}
+                  disabled={isClearing}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isClearing ? "Clearing..." : "Clear History"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
 
