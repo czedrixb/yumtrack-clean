@@ -7,6 +7,7 @@ export interface IStorage {
   getAllFoodAnalyses(): Promise<FoodAnalysis[]>;
   getRecentFoodAnalyses(limit: number): Promise<FoodAnalysis[]>;
   deleteFoodAnalysis(id: number): Promise<boolean>;
+  clearAllAnalyses(): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -59,6 +60,12 @@ export class MemStorage implements IStorage {
 
   async deleteFoodAnalysis(id: number): Promise<boolean> {
     return this.foodAnalyses.delete(id);
+  }
+
+  async clearAllAnalyses(): Promise<boolean> {
+    this.foodAnalyses.clear();
+    this.currentAnalysisId = 1;
+    return true;
   }
 }
 

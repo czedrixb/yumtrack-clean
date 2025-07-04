@@ -31,14 +31,31 @@ export default function Settings() {
     });
   };
 
-  const clearHistory = () => {
+  const clearHistory = async () => {
     if (confirm("Are you sure you want to clear all analysis history? This action cannot be undone.")) {
-      // In a real app, this would call an API endpoint
-      localStorage.removeItem('nutrisnap-history');
-      toast({
-        title: "History cleared",
-        description: "All analysis history has been removed.",
-      });
+      try {
+        const response = await fetch('/api/food-analyses', {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to clear history');
+        }
+
+        toast({
+          title: "History cleared",
+          description: "All analysis history has been removed.",
+        });
+
+        // Refresh the cache to update any displayed data
+        window.location.reload();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to clear history. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 

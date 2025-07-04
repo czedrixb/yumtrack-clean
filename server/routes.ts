@@ -119,6 +119,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all food analyses
+  app.delete("/api/food-analyses", async (req, res) => {
+    try {
+      await storage.clearAllAnalyses();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error clearing all food analyses:", error);
+      res.status(500).json({ error: "Failed to clear all food analyses" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
