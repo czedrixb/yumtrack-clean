@@ -7,15 +7,39 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
-import { Download } from "lucide-react";
+import { Download, Mail } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import emailjs from '@emailjs/browser';
+
+const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  message: z.string().min(10, "Message must be at least 10 characters")
+});
 
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
   const { canInstall, install, isInstalled } = usePWA();
+  
+  const contactForm = useForm<z.infer<typeof contactSchema>>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      message: ""
+    }
+  });
 
   useEffect(() => {
     // Load settings from localStorage
@@ -105,6 +129,48 @@ export default function Settings() {
     
     // If nothing worked, just log it - don't show modal
     console.log('Install not available on this device/browser');
+  };
+
+  const onContactSubmit = async (values: z.infer<typeof contactSchema>) => {
+    setIsSubmitting(true);
+    try {
+      // EmailJS configuration from environment variables
+      const serviceID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (!serviceID || !templateID || !publicKey) {
+        throw new Error('EmailJS configuration missing');
+      }
+
+      const templateParams = {
+        from_name: values.name,
+        from_email: values.email,
+        to_email: 'uedu.dev@gmail.com',
+        message: values.message,
+        app_name: 'YumTrack',
+        subject: `YumTrack Support: Contact from ${values.name}`
+      };
+
+      await emailjs.send(serviceID, templateID, templateParams, publicKey);
+      
+      toast({
+        title: "Message sent",
+        description: "Your support request has been sent to W Soft Labs. We'll get back to you soon!",
+      });
+      
+      contactForm.reset();
+      setShowContactModal(false);
+    } catch (error) {
+      console.error('EmailJS error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -250,12 +316,97 @@ export default function Settings() {
             <Button variant="link" className="text-sm">
               Terms of Service
             </Button>
-            <Button variant="link" className="text-sm">
+            <Button 
+              variant="link" 
+              className="text-sm"
+              onClick={() => setShowContactModal(true)}
+            >
               Contact Support
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Contact Support Modal */}
+      <AlertDialog open={showContactModal} onOpenChange={setShowContactModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Contact Support</AlertDialogTitle>
+            <AlertDialogDescription>
+              Send a message to W Soft Labs support team. We'll get back to you as soon as possible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <Form {...contactForm}>
+            <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-4">
+              <FormField
+                control={contactForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={contactForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="your@email.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={contactForm.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Message</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe your issue, feature request, or question..."
+                        rows={4}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setShowContactModal(false)}>
+                  Cancel
+                </AlertDialogCancel>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Mail className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send Message
+                    </>
+                  )}
+                </Button>
+              </AlertDialogFooter>
+            </form>
+          </Form>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
