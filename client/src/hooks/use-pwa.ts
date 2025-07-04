@@ -20,12 +20,20 @@ export function usePWA() {
     const isInWebApp = (window.navigator as any).standalone === true;
     setIsInstalled(isStandalone || isInWebApp);
 
+    // Check if there's already a global prompt stored
+    if ((window as any).deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt);
+      setCanInstall(true);
+    }
+
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const event = e as BeforeInstallPromptEvent;
       setDeferredPrompt(event);
       setCanInstall(true);
+      // Store globally as backup
+      (window as any).deferredPrompt = event;
     };
 
     // Listen for app installed event

@@ -65,6 +65,8 @@ export default function Settings() {
 
   const handleInstallApp = async () => {
     console.log('Install button clicked, canInstall:', canInstall);
+    
+    // First try the standard PWA install if available
     if (canInstall) {
       try {
         const installed = await install();
@@ -74,13 +76,36 @@ export default function Settings() {
             title: "App installed",
             description: "YumTrack has been added to your home screen.",
           });
+          return;
         }
       } catch (error) {
         console.error('Installation failed:', error);
       }
-    } else {
-      console.log('Install not available');
     }
+    
+    // If standard install isn't available, try to trigger the prompt manually
+    // This handles cases where the prompt event wasn't captured on initial load
+    try {
+      // Check if there's a global beforeinstallprompt event we can use
+      const event = (window as any).deferredPrompt;
+      if (event) {
+        await event.prompt();
+        const choiceResult = await event.userChoice;
+        if (choiceResult.outcome === 'accepted') {
+          toast({
+            title: "App installed",
+            description: "YumTrack has been added to your home screen.",
+          });
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Manual install prompt failed:', error);
+    }
+    
+    // If nothing worked, show install instructions
+    console.log('Showing install instructions as fallback');
+    setShowInstallModal(true);
   };
 
   const getInstallInstructions = () => {
