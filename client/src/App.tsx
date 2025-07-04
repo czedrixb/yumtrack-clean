@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import History from "@/pages/history";
 import Stats from "@/pages/stats";
 import Settings from "@/pages/settings";
+import Download from "@/pages/download";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/bottom-navigation";
 import PWAInstallBanner from "@/components/pwa-install-banner";
@@ -36,6 +37,7 @@ function Router() {
         <Route path="/history" component={History} />
         <Route path="/stats" component={Stats} />
         <Route path="/settings" component={Settings} />
+        <Route path="/download" component={Download} />
         <Route component={NotFound} />
       </Switch>
       <BottomNavigation onHomeClick={handleHomeClick} />

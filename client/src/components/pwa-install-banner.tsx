@@ -22,14 +22,22 @@ export default function PWAInstallBanner() {
 
   const handleInstall = async () => {
     if (canInstall) {
-      const installed = await install();
-      if (installed) {
-        setIsVisible(false);
-        return;
+      try {
+        const installed = await install();
+        if (installed) {
+          setIsVisible(false);
+          // Show success message
+          setTimeout(() => {
+            alert('NutriSnap has been installed! Look for the app icon on your home screen.');
+          }, 500);
+          return;
+        }
+      } catch (error) {
+        console.error('Installation failed:', error);
       }
     }
     
-    // Show manual install instructions modal
+    // Show manual install instructions modal for immediate guidance
     setShowInstallModal(true);
   };
 
@@ -82,16 +90,19 @@ export default function PWAInstallBanner() {
         <div className="flex items-center justify-between max-w-sm mx-auto">
           <div className="flex items-center space-x-3">
             <Download className="w-6 h-6" />
-            <span className="text-sm font-medium">Install NutriSnap</span>
+            <div>
+              <div className="text-sm font-medium">Get the App</div>
+              <div className="text-xs opacity-90">Install for offline access</div>
+            </div>
           </div>
           <div className="flex space-x-2">
             <Button
               size="sm"
               variant="secondary"
               onClick={handleInstall}
-              className="text-xs px-3 py-1 h-auto"
+              className="text-xs px-4 py-2 h-auto font-semibold"
             >
-              Install
+              Download
             </Button>
             <Button
               size="sm"
