@@ -10,6 +10,7 @@ import NutritionResults from "@/components/nutrition-results";
 import type { FoodAnalysis } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { dataURLtoBlob } from "@/lib/image-utils";
+import { trackEvent } from "@/lib/analytics";
 
 type ViewState = 'upload' | 'camera' | 'analyzing' | 'results';
 
@@ -48,6 +49,8 @@ const Home = forwardRef<HomeRef>((props, ref) => {
     onSuccess: (result) => {
       setAnalysisResult(result);
       setCurrentView('results');
+      // Track successful food analysis
+      trackEvent('food_analysis_complete', 'engagement', 'success');
       // Invalidate both queries to update home page data
       queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
@@ -167,6 +170,7 @@ const Home = forwardRef<HomeRef>((props, ref) => {
               onClick={() => {
                 if (selectedImage) {
                   setCurrentView('analyzing');
+                  trackEvent('food_analysis_start', 'engagement', 'manual_analysis');
                   analysisMutation.mutate(selectedImage);
                 }
               }}
@@ -183,7 +187,10 @@ const Home = forwardRef<HomeRef>((props, ref) => {
       {!selectedImage && (
         <div className="space-y-3">
           <Button 
-            onClick={() => setCurrentView('camera')}
+            onClick={() => {
+              trackEvent('camera_open', 'engagement', 'photo_capture');
+              setCurrentView('camera');
+            }}
             className="w-full bg-primary text-primary-foreground py-4 h-auto text-lg font-semibold shadow-lg hover:bg-primary/90"
           >
             <Camera className="w-6 h-6 mr-3" />
@@ -194,6 +201,7 @@ const Home = forwardRef<HomeRef>((props, ref) => {
             variant="outline"
             className="w-full py-4 h-auto text-lg font-semibold border-2 hover:border-primary hover:text-primary"
             onClick={() => {
+              trackEvent('gallery_open', 'engagement', 'image_upload');
               const input = document.createElement('input');
               input.type = 'file';
               input.accept = 'image/*';

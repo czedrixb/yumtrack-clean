@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Home, Clock, BarChart3, Settings } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const navItems = [
   { path: "/", icon: Home, label: "Home" },
@@ -17,6 +18,10 @@ export default function BottomNavigation({ onHomeClick }: BottomNavigationProps)
   const [location, setLocation] = useLocation();
 
   const handleNavClick = (path: string) => {
+    // Track navigation events
+    const pageName = path === "/" ? "home" : path.slice(1);
+    trackEvent('navigation', 'engagement', pageName);
+    
     if (path === "/" && onHomeClick) {
       // Custom home navigation handler
       onHomeClick();

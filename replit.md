@@ -85,6 +85,11 @@ The application follows a modern full-stack architecture with clear separation o
 - **TypeScript**: Type safety across the entire application
 - **ESBuild**: Fast JavaScript bundling for server-side code
 
+### Analytics & Tracking
+- **Google Analytics 4**: User behavior tracking, session analytics, and engagement metrics
+- **Event Tracking**: Custom event tracking for food analysis, navigation, and PWA installation
+- **Page View Tracking**: Single-page application route tracking
+
 ## Deployment Strategy
 
 ### Development
@@ -108,6 +113,7 @@ The application follows a modern full-stack architecture with clear separation o
 
 ```
 Changelog:
+- July 06, 2025. Added Google Analytics integration for user tracking and session analytics
 - July 04, 2025. Renamed app from NutriSnap to YumTrack
 - July 03, 2025. Initial setup
 ```

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { X, Download } from "lucide-react";
 import { usePWA } from "@/hooks/use-pwa";
+import { trackEvent } from "@/lib/analytics";
 
 export default function PWAInstallBanner() {
   const [isVisible, setIsVisible] = useState(false);
@@ -21,15 +22,19 @@ export default function PWAInstallBanner() {
   }, [canInstall, isInstalled]);
 
   const handleInstall = async () => {
+    trackEvent('pwa_install_attempt', 'engagement', 'banner_click');
+    
     if (canInstall) {
       try {
         const installed = await install();
         if (installed) {
+          trackEvent('pwa_install_success', 'engagement', 'automatic_install');
           setIsVisible(false);
           return;
         }
       } catch (error) {
         console.error('Installation failed:', error);
+        trackEvent('pwa_install_failed', 'engagement', 'automatic_install');
       }
     }
     
@@ -73,6 +78,7 @@ export default function PWAInstallBanner() {
   };
 
   const handleDismiss = () => {
+    trackEvent('pwa_install_dismiss', 'engagement', 'banner_dismiss');
     setIsVisible(false);
     localStorage.setItem('nutrisnap-install-dismissed', 'true');
   };
