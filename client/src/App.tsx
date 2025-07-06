@@ -12,7 +12,7 @@ import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/bottom-navigation";
 import PWAInstallBanner from "@/components/pwa-install-banner";
 import { useRef, useEffect } from "react";
-import { initGA } from "./lib/analytics";
+import { initGA, trackEvent } from "./lib/analytics";
 import { useAnalytics } from "./hooks/use-analytics";
 
 function Router() {
@@ -58,6 +58,11 @@ function App() {
       console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
     } else {
       initGA();
+      
+      // Track initial app load after a short delay to ensure GA is ready
+      setTimeout(() => {
+        trackEvent('app_load', 'engagement', 'initial_visit');
+      }, 1000);
     }
   }, []);
 
