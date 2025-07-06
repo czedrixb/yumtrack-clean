@@ -37,9 +37,17 @@ export const initGA = () => {
     gtag('js', new Date());
     gtag('config', '${measurementId}', {
       debug_mode: true,
-      send_page_view: true
+      send_page_view: true,
+      transport_type: 'beacon'
     });
     console.log('Google Analytics initialized with config:', '${measurementId}');
+    
+    // Send a test event to verify connection
+    gtag('event', 'ga_connection_test', {
+      event_category: 'debug',
+      event_label: 'initial_setup'
+    });
+    console.log('Test event sent to Google Analytics');
   `;
   document.head.appendChild(script2);
 };
@@ -80,11 +88,24 @@ export const trackEvent = (
     return;
   }
   
+  // Check if dataLayer exists to verify GA is properly loaded
+  if (window.dataLayer) {
+    console.log('DataLayer length before event:', window.dataLayer.length);
+  }
+  
   window.gtag('event', action, {
     event_category: category,
     event_label: label,
     value: value,
+    // Add custom parameter to help identify our events
+    custom_parameter_1: 'yumtrack_app'
   });
+  
+  // Check dataLayer after sending event
+  if (window.dataLayer) {
+    console.log('DataLayer length after event:', window.dataLayer.length);
+    console.log('Latest dataLayer entry:', window.dataLayer[window.dataLayer.length - 1]);
+  }
   
   console.log('Event tracked successfully:', action);
 };
