@@ -105,9 +105,12 @@ The application follows a modern full-stack architecture with clear separation o
 - **Security**: Input validation, file type restrictions, and rate limiting
 
 ### Environment Configuration
-- OpenAI API key for food analysis
-- Database URL for PostgreSQL connection
-- Production optimizations for caching and performance
+- **dotenv Integration**: Automatic environment variable loading via dotenv
+- **Configuration Management**: Centralized config with validation in `server/config.ts`
+- **OpenAI API key**: Required for food analysis functionality
+- **Google Analytics**: Measurement ID for user tracking
+- **EmailJS**: Service configuration for contact support
+- **SendGrid**: Optional API key for server-side email functionality
 
 ## Changelog
 
