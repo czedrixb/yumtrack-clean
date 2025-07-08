@@ -138,7 +138,7 @@ const Home = forwardRef<HomeRef>((props, ref) => {
     <main className="max-w-sm mx-auto px-4 py-6 space-y-6">
       {/* Header with YumTrack Logo */}
       <header className="text-center space-y-6">
-        <div className="logo-container flex items-center justify-center gap-5 p-8 bg-white rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-center gap-5">
           <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             {/* Magnifying glass circle */}
             <circle cx="45" cy="45" r="30" stroke="#fd7e14" strokeWidth="10" fill="none"/>
@@ -148,7 +148,7 @@ const Home = forwardRef<HomeRef>((props, ref) => {
             <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
             <path d="M45,55 C47,45 55,43 55,35" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
           </svg>
-          <span className="logo-text text-4xl text-[#343a40] font-semibold font-['Poppins',system-ui,-apple-system,sans-serif]">YumTrack</span>
+          <span className="text-4xl text-[#343a40] font-semibold font-['Poppins',system-ui,-apple-system,sans-serif]">YumTrack</span>
         </div>
         <p className="text-muted-foreground text-sm leading-relaxed">Take a photo of your meal and get instant nutrition analysis powered by AI</p>
       </header>
