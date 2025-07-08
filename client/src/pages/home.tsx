@@ -136,15 +136,20 @@ const Home = forwardRef<HomeRef>((props, ref) => {
 
   return (
     <main className="max-w-sm mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <header className="text-center space-y-3">
-        <div className="w-20 h-20 bg-gradient-primary rounded-2xl mx-auto flex items-center justify-center shadow-lg">
-          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      {/* Header with YumTrack Logo */}
+      <header className="text-center space-y-6">
+        <div className="logo-container flex items-center justify-center gap-5 p-8 bg-white rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+          <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            {/* Magnifying glass circle */}
+            <circle cx="45" cy="45" r="30" stroke="#fd7e14" strokeWidth="10" fill="none"/>
+            {/* Magnifying glass handle */}
+            <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" strokeWidth="12" strokeLinecap="round"/>
+            {/* Leaf inside the glass */}
+            <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
+            <path d="M45,55 C47,45 55,43 55,35" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
           </svg>
+          <span className="logo-text text-4xl text-[#343a40] font-semibold font-['Poppins',system-ui,-apple-system,sans-serif]">YumTrack</span>
         </div>
-        <h1 className="text-2xl font-bold text-foreground">Snap Your Food</h1>
         <p className="text-muted-foreground text-sm leading-relaxed">Take a photo of your meal and get instant nutrition analysis powered by AI</p>
       </header>
 
