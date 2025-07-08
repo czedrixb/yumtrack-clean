@@ -1,18 +1,9 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="256" fill="white"/>
-  
-  <!-- Magnifying glass icon scaled for 512x512 -->
-  <g transform="translate(156, 156) scale(2)">
-    <!-- Magnifying glass circle -->
-    <circle cx="45" cy="45" r="30" stroke="#fd7e14" stroke-width="10" fill="none"/>
-    <!-- Magnifying glass handle -->
-    <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" stroke-width="12" stroke-linecap="round"/>
-    <!-- Leaf inside the glass -->
-    <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
-    <path d="M45,55 C47,45 55,43 55,35" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
-  </g>
-  
-  <!-- App name text -->
-  <text x="256" y="450" text-anchor="middle" fill="#343a40" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="600">YumTrack</text>
+<svg width="512" height="512" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Magnifying glass circle -->
+  <circle cx="45" cy="45" r="30" stroke="#fd7e14" stroke-width="10" fill="none"/>
+  <!-- Magnifying glass handle -->
+  <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" stroke-width="12" stroke-linecap="round"/>
+  <!-- Leaf inside the glass -->
+  <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
+  <path d="M45,55 C47,45 55,43 55,35" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>

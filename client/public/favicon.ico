@@ -1,14 +1,9 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="16" cy="16" r="16" fill="white"/>
-  
-  <!-- Magnifying glass scaled for favicon -->
-  <g transform="translate(6, 6) scale(0.32)">
-    <!-- Magnifying glass circle -->
-    <circle cx="45" cy="45" r="30" stroke="#fd7e14" stroke-width="10" fill="none"/>
-    <!-- Magnifying glass handle -->
-    <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" stroke-width="12" stroke-linecap="round"/>
-    <!-- Leaf inside the glass -->
-    <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
-    <path d="M45,55 C47,45 55,43 55,35" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
-  </g>
+<svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Magnifying glass circle -->
+  <circle cx="45" cy="45" r="30" stroke="#fd7e14" stroke-width="10" fill="none"/>
+  <!-- Magnifying glass handle -->
+  <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" stroke-width="12" stroke-linecap="round"/>
+  <!-- Leaf inside the glass -->
+  <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
+  <path d="M45,55 C47,45 55,43 55,35" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>
