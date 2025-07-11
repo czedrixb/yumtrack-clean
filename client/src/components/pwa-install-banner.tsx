@@ -55,21 +55,29 @@ export default function PWAInstallBanner() {
     
     // Special instructions for webview contexts
     if (isInWebView) {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isKakao = userAgent.includes('kakaotalk');
+      const isFacebook = userAgent.includes('fban') || userAgent.includes('fbav');
+      
+      let appName = "messenger app";
+      if (isKakao) appName = "KakaoTalk";
+      else if (isFacebook) appName = "Facebook Messenger";
+      
       return {
-        title: "Open in Browser to Install",
-        description: "You're currently viewing this in a messenger app. To install YumTrack as an app, you need to open it in your browser first.",
+        title: `Add to Home Screen from ${appName}`,
+        description: `While PWA installation isn't available in ${appName}, you can still add YumTrack to your home screen for quick access.`,
         steps: isIOS ? [
-          "Tap the Share button (□↗) at the bottom",
-          "Select 'Open in Safari'",
-          "Once in Safari, tap Share again",
+          isKakao ? "Tap the Safari icon (🌐) at the bottom" : "Tap the Share button (□↗) at the bottom",
+          isKakao ? "This opens the page in Safari" : "Select 'Open in Safari'",
+          "In Safari, tap the Share button again",
           "Scroll down and tap 'Add to Home Screen'",
-          "Tap 'Add' to install the app"
+          "Tap 'Add' to create a shortcut"
         ] : [
-          "Tap the menu (⋮) in the top right",
-          "Select 'Open in Browser' or 'Open in Chrome'",
-          "Once in your browser, tap the menu again",
-          "Look for 'Add to Home screen' or 'Install app'",
-          "Tap to install the app"
+          isKakao ? "Tap the browser icon at the top right" : "Tap the menu (⋮) in the top right",
+          isKakao ? "Select your default browser" : "Select 'Open in Browser' or 'Open in Chrome'",
+          "In your browser, tap the menu (⋮) again",
+          "Look for 'Add to Home screen'",
+          "Tap to create a shortcut"
         ]
       };
     }
@@ -124,7 +132,7 @@ export default function PWAInstallBanner() {
           <div className="flex items-center space-x-3">
             <Download className="w-6 h-6" />
             <div>
-              <div className="text-sm font-medium">Get the App</div>
+              <div className="text-sm font-medium">{isInWebView ? "Add to Home Screen" : "Get the App"}</div>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -134,7 +142,7 @@ export default function PWAInstallBanner() {
               onClick={handleInstall}
               className="text-xs px-4 py-2 h-auto font-semibold"
             >
-              Download
+              {isInWebView ? "Add" : "Download"}
             </Button>
             <Button
               size="sm"

@@ -11,13 +11,16 @@ import Download from "@/pages/download";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/bottom-navigation";
 import PWAInstallBanner from "@/components/pwa-install-banner";
+import WebViewHelper from "@/components/webview-helper";
 import { useRef, useEffect } from "react";
 import { initGA, trackEvent } from "./lib/analytics";
 import { useAnalytics } from "./hooks/use-analytics";
+import { usePWA } from "./hooks/use-pwa";
 
 function Router() {
   const homeRef = useRef<{ goToHome: () => void }>(null);
   const [location, setLocation] = useLocation();
+  const { isInWebView } = usePWA();
   
   // Track page views when routes change
   useAnalytics();
@@ -35,6 +38,7 @@ function Router() {
   return (
     <div className="min-h-screen bg-background pb-16">
       <PWAInstallBanner />
+      <WebViewHelper isInWebView={isInWebView} />
       <Switch>
         <Route path="/">
           <Home ref={homeRef} />
