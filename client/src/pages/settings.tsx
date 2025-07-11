@@ -30,7 +30,7 @@ export default function Settings() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
-  const { canInstall, install, isInstalled } = usePWA();
+  const { canInstall, install, isInstalled, isInWebView } = usePWA();
   
   const contactForm = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
@@ -253,7 +253,10 @@ export default function Settings() {
               Install
             </Button>
             <p className="text-sm text-muted-foreground mt-2">
-              Install YumTrack on your device for faster access and an app-like experience
+              {isInWebView 
+                ? "You're in a messenger app. Tap Install to learn how to open in your browser first."
+                : "Install YumTrack on your device for faster access and an app-like experience"
+              }
             </p>
 
           </CardContent>

@@ -8,7 +8,7 @@ import { trackEvent } from "@/lib/analytics";
 export default function PWAInstallBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
-  const { canInstall, install, isInstalled } = usePWA();
+  const { canInstall, install, isInstalled, isInWebView } = usePWA();
 
   useEffect(() => {
     // Show banner if app can be installed and user hasn't dismissed it
@@ -24,6 +24,13 @@ export default function PWAInstallBanner() {
   const handleInstall = async () => {
     trackEvent('pwa_install_attempt', 'engagement', 'banner_click');
     
+    // If in webview, show instructions modal instead of trying to install
+    if (isInWebView) {
+      trackEvent('pwa_install_webview_detected', 'engagement', 'banner_click');
+      setShowInstallModal(true);
+      return;
+    }
+    
     if (canInstall) {
       try {
         const installed = await install();
@@ -38,18 +45,39 @@ export default function PWAInstallBanner() {
       }
     }
     
-    // If automatic install isn't available, just hide the banner
-    // Don't show modal instructions - user can access them through Settings
-    setIsVisible(false);
+    // If automatic install isn't available, show manual instructions
+    setShowInstallModal(true);
   };
 
   const getInstallInstructions = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
     
+    // Special instructions for webview contexts
+    if (isInWebView) {
+      return {
+        title: "Open in Browser to Install",
+        description: "You're currently viewing this in a messenger app. To install YumTrack as an app, you need to open it in your browser first.",
+        steps: isIOS ? [
+          "Tap the Share button (□↗) at the bottom",
+          "Select 'Open in Safari'",
+          "Once in Safari, tap Share again",
+          "Scroll down and tap 'Add to Home Screen'",
+          "Tap 'Add' to install the app"
+        ] : [
+          "Tap the menu (⋮) in the top right",
+          "Select 'Open in Browser' or 'Open in Chrome'",
+          "Once in your browser, tap the menu again",
+          "Look for 'Add to Home screen' or 'Install app'",
+          "Tap to install the app"
+        ]
+      };
+    }
+    
     if (isIOS) {
       return {
         title: "Install on iOS",
+        description: "Install YumTrack as an app on your iPhone or iPad for faster access.",
         steps: [
           "Tap the Share button (□↗) in Safari",
           "Scroll down and tap 'Add to Home Screen'",
@@ -59,6 +87,7 @@ export default function PWAInstallBanner() {
     } else if (isAndroid) {
       return {
         title: "Install on Android",
+        description: "Install YumTrack as an app on your Android device for faster access.",
         steps: [
           "Tap the menu (⋮) in Chrome",
           "Tap 'Add to Home screen'",
@@ -68,6 +97,7 @@ export default function PWAInstallBanner() {
     } else {
       return {
         title: "Install on Desktop",
+        description: "Install YumTrack as an app on your computer for faster access.",
         steps: [
           "Look for the install button (⊕) in your browser's address bar",
           "Or check the browser menu for 'Install app' option",
@@ -124,7 +154,7 @@ export default function PWAInstallBanner() {
           <AlertDialogHeader>
             <AlertDialogTitle>{getInstallInstructions().title}</AlertDialogTitle>
             <AlertDialogDescription>
-              Follow these steps to install YumTrack as an app on your device:
+              {getInstallInstructions().description || "Follow these steps to install YumTrack as an app on your device:"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 my-4">

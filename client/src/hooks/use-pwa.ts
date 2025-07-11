@@ -13,12 +13,40 @@ export function usePWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isInWebView, setIsInWebView] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInWebApp = (window.navigator as any).standalone === true;
     setIsInstalled(isStandalone || isInWebApp);
+
+    // Detect if running in webview (messenger apps, KakaoTalk, etc.)
+    const detectWebView = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isWebView = (
+        // KakaoTalk webview
+        userAgent.includes('kakaotalk') ||
+        // Facebook Messenger
+        userAgent.includes('fban') || userAgent.includes('fbav') ||
+        // Instagram
+        userAgent.includes('instagram') ||
+        // Line browser
+        userAgent.includes('line') ||
+        // WeChat
+        userAgent.includes('micromessenger') ||
+        // Generic webview indicators
+        userAgent.includes('wv') ||
+        // Android WebView
+        (userAgent.includes('android') && userAgent.includes('version') && !userAgent.includes('chrome')) ||
+        // iOS WebView (not Safari)
+        (userAgent.includes('iphone') || userAgent.includes('ipad')) && !userAgent.includes('safari')
+      );
+      
+      return isWebView;
+    };
+
+    setIsInWebView(detectWebView());
 
     // Check if there's already a global prompt stored
     if ((window as any).deferredPrompt) {
@@ -74,6 +102,7 @@ export function usePWA() {
   return {
     canInstall: canInstall && !isInstalled,
     isInstalled,
+    isInWebView,
     install,
   };
 }
