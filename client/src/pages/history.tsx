@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trash2, Eye, Clock } from "lucide-react";
+import { Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import NutritionResults from "@/components/nutrition-results";
-import PullToRefresh from "@/components/pull-to-refresh";
-import MobileHeader from "@/components/mobile-header";
 import type { FoodAnalysis } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 
@@ -50,20 +48,12 @@ export default function History() {
     );
   }
 
-  const handleRefresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
-  };
-
   return (
-    <PullToRefresh onRefresh={handleRefresh}>
-      <div className="h-full">
-        <MobileHeader 
-          title="History" 
-          subtitle="Your food analysis journey"
-          className="bg-gradient-primary text-white"
-        />
-        
-        <main className="px-4 py-6 space-y-6">
+    <main className="max-w-sm mx-auto px-4 py-6 space-y-6">
+      <header className="text-center space-y-2">
+        <h1 className="text-2xl font-bold text-foreground">Analysis History</h1>
+        <p className="text-muted-foreground text-sm">View and manage your food analyses</p>
+      </header>
 
       {isLoading ? (
         <div className="space-y-4">
@@ -137,8 +127,6 @@ export default function History() {
           ))}
         </div>
       )}
-        </main>
-      </div>
-    </PullToRefresh>
+    </main>
   );
 }

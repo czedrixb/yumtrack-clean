@@ -3,13 +3,10 @@
   "short_name": "YumTrack",
   "description": "AI-powered food recognition and nutrition analysis app",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#F8FAFC",
   "theme_color": "#4F46E5",
   "orientation": "portrait-primary",
-  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.svg",
