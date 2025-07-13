@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy, ExternalLink, Bookmark } from "lucide-react";
+import { Copy, ExternalLink, Bookmark, QrCode, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 
@@ -39,22 +39,44 @@ export default function WebViewHelper({ isInWebView }: WebViewHelperProps) {
     }
   };
 
+  const generateQRCode = () => {
+    const url = window.location.href;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+    
+    trackEvent('webview_qr_generated', 'engagement', 'helper_action');
+    
+    // Open QR code in new window/tab
+    window.open(qrUrl, '_blank');
+  };
+
   const openInBrowser = () => {
     trackEvent('webview_open_browser_attempt', 'engagement', 'helper_action');
     
-    // Try to open in default browser
     const userAgent = navigator.userAgent.toLowerCase();
-    let browserUrl = window.location.href;
+    const browserUrl = window.location.href;
     
+    // Enhanced browser opening logic
     if (userAgent.includes('kakaotalk')) {
-      // KakaoTalk specific URL scheme
-      window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(browserUrl)}`;
-    } else if (userAgent.includes('android')) {
-      // Android intent to open in browser
+      // KakaoTalk: Multiple fallback options
+      try {
+        window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(browserUrl)}`;
+      } catch {
+        // Fallback to generic browser intent
+        window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;end`;
+      }
+    } else if (userAgent.includes('fban') || userAgent.includes('fbav')) {
+      // Facebook Messenger
       window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;end`;
+    } else if (userAgent.includes('android')) {
+      // Generic Android webview
+      window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(browserUrl)};end`;
     } else {
-      // Fallback - try to open in new window
-      window.open(browserUrl, '_blank');
+      // iOS or other - try to open in new window
+      const newWindow = window.open(browserUrl, '_blank');
+      if (!newWindow) {
+        // If popup blocked, show instructions
+        setShowHelper(true);
+      }
     }
   };
 
@@ -88,12 +110,21 @@ export default function WebViewHelper({ isInWebView }: WebViewHelperProps) {
           
           <div className="space-y-3 my-4">
             <Button
-              variant="outline"
-              className="w-full justify-start"
+              variant="default"
+              className="w-full justify-start bg-primary hover:bg-primary/90"
               onClick={openInBrowser}
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Open in Browser (Recommended)
+              Open in Browser (Best Option)
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={generateQRCode}
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              Show QR Code (Scan with Camera)
             </Button>
             
             <Button
@@ -102,15 +133,16 @@ export default function WebViewHelper({ isInWebView }: WebViewHelperProps) {
               onClick={copyUrl}
             >
               <Copy className="w-4 h-4 mr-2" />
-              Copy Link to Paste in Browser
+              Copy Link to Share
             </Button>
           </div>
 
           <div className="text-xs text-muted-foreground space-y-2">
-            <p><strong>Why this helps:</strong></p>
-            <p>• Messenger apps can't install web apps directly</p>
-            <p>• Opening in your browser allows full app installation</p>
-            <p>• You'll get the best YumTrack experience</p>
+            <p><strong>Why use the browser?</strong></p>
+            <p>• Get the full YumTrack app experience</p>
+            <p>• Save photos offline and install as home screen app</p>
+            <p>• Works perfectly on all phones and tablets</p>
+            <p>• No downloads needed - it's a modern web app</p>
           </div>
         </AlertDialogContent>
       </AlertDialog>
