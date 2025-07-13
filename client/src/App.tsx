@@ -36,20 +36,31 @@ function Router() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16">
+    <div className="h-full bg-background safe-area-top safe-area-left safe-area-right">
       <PWAInstallBanner />
       <WebViewHelper isInWebView={isInWebView} />
-      <Switch>
-        <Route path="/">
-          <Home ref={homeRef} />
-        </Route>
-        <Route path="/history" component={History} />
-        <Route path="/stats" component={Stats} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/download" component={Download} />
-        <Route component={NotFound} />
-      </Switch>
-      <BottomNavigation onHomeClick={handleHomeClick} />
+      
+      {/* Mobile Status Bar Area */}
+      <div className="safe-area-top bg-background" />
+      
+      {/* Main Content Area */}
+      <div className="flex flex-col h-full pb-20 safe-area-bottom">
+        <main className="flex-1 native-scroll">
+          <Switch>
+            <Route path="/">
+              <Home ref={homeRef} />
+            </Route>
+            <Route path="/history" component={History} />
+            <Route path="/stats" component={Stats} />
+            <Route path="/settings" component={Settings} />
+            <Route path="/download" component={Download} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+        
+        {/* Mobile Bottom Navigation */}
+        <BottomNavigation onHomeClick={handleHomeClick} />
+      </div>
     </div>
   );
 }
