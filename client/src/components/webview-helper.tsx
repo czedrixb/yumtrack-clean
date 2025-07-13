@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy, ExternalLink, Bookmark, QrCode, Smartphone } from "lucide-react";
+import { Copy, ExternalLink, Bookmark, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 
@@ -39,15 +39,7 @@ export default function WebViewHelper({ isInWebView }: WebViewHelperProps) {
     }
   };
 
-  const generateQRCode = () => {
-    const url = window.location.href;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-    
-    trackEvent('webview_qr_generated', 'engagement', 'helper_action');
-    
-    // Open QR code in new window/tab
-    window.open(qrUrl, '_blank');
-  };
+
 
   const openInBrowser = () => {
     trackEvent('webview_open_browser_attempt', 'engagement', 'helper_action');
@@ -118,15 +110,7 @@ export default function WebViewHelper({ isInWebView }: WebViewHelperProps) {
               Open in Browser (Best Option)
             </Button>
             
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={generateQRCode}
-            >
-              <QrCode className="w-4 h-4 mr-2" />
-              Show QR Code (Scan with Camera)
-            </Button>
-            
+
             <Button
               variant="outline"
               className="w-full justify-start"
