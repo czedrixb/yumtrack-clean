@@ -31,16 +31,49 @@ export default function PWAInstallBanner() {
       
       trackEvent('webview_browser_redirect', 'engagement', 'install_redirect');
       
+      // Try multiple methods to open in browser
+      let opened = false;
+      
       if (userAgent.includes('kakaotalk')) {
-        // KakaoTalk specific - open in external browser
-        window.open(`kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`, '_blank');
+        // KakaoTalk specific methods
+        try {
+          // Method 1: KakaoTalk external browser
+          window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
+          opened = true;
+        } catch (e) {
+          console.log('KakaoTalk method 1 failed, trying fallback');
+        }
       } else if (userAgent.includes('messenger') || userAgent.includes('fban') || userAgent.includes('fbav')) {
-        // Facebook Messenger - use intent to open in browser
-        window.open(`intent://browse#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`, '_blank');
-      } else {
-        // Generic webview fallback
-        window.open(currentUrl, '_blank');
+        // Facebook Messenger methods
+        try {
+          // Method 1: Android intent
+          if (userAgent.includes('android')) {
+            window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`;
+            opened = true;
+          }
+        } catch (e) {
+          console.log('Messenger method 1 failed, trying fallback');
+        }
       }
+      
+      // Universal fallback methods
+      if (!opened) {
+        try {
+          // Method 2: Try to open in new window/tab
+          const newWindow = window.open(currentUrl, '_blank');
+          if (newWindow) {
+            opened = true;
+          }
+        } catch (e) {
+          console.log('Window.open failed, trying location change');
+        }
+      }
+      
+      // Last resort: direct location change
+      if (!opened) {
+        window.location.href = currentUrl;
+      }
+      
       return;
     }
     
@@ -145,7 +178,7 @@ export default function PWAInstallBanner() {
           <div className="flex items-center space-x-3">
             <Download className="w-6 h-6" />
             <div>
-              <div className="text-sm font-medium">{isInWebView ? "Add to Home Screen" : "Get the App"}</div>
+              <div className="text-sm font-medium">Get the App</div>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -155,7 +188,7 @@ export default function PWAInstallBanner() {
               onClick={handleInstall}
               className="text-xs px-4 py-2 h-auto font-semibold"
             >
-              {isInWebView ? "Add" : "Download"}
+              Download
             </Button>
             <Button
               size="sm"
