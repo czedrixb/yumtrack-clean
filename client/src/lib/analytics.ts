@@ -6,6 +6,11 @@ declare global {
   }
 }
 
+// Session tracking variables
+let sessionStartTime: number = 0;
+let lastActivityTime: number = 0;
+let isSessionActive: boolean = false;
+
 // Initialize Google Analytics
 export const initGA = () => {
   const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
@@ -37,8 +42,11 @@ export const initGA = () => {
     gtag('js', new Date());
     gtag('config', '${measurementId}', {
       debug_mode: true,
-      send_page_view: true,
-      transport_type: 'beacon'
+      send_page_view: false,
+      transport_type: 'beacon',
+      custom_map: {
+        'custom_parameter_1': 'app_name'
+      }
     });
     console.log('Google Analytics initialized with config:', '${measurementId}');
     
@@ -50,6 +58,9 @@ export const initGA = () => {
     console.log('Test event sent to Google Analytics');
   `;
   document.head.appendChild(script2);
+
+  // Start session tracking
+  startSessionTracking();
 };
 
 // Track page views - useful for single-page applications
@@ -108,4 +119,85 @@ export const trackEvent = (
   }
   
   console.log('Event tracked successfully:', action);
+};
+
+// Session tracking functions
+export const startSessionTracking = () => {
+  if (isSessionActive) return;
+  
+  sessionStartTime = Date.now();
+  lastActivityTime = Date.now();
+  isSessionActive = true;
+  
+  console.log('Session tracking started');
+  
+  // Track session start
+  trackEvent('session_start', 'engagement', 'session_tracking');
+  
+  // Set up activity tracking
+  const events = ['click', 'scroll', 'keypress', 'mousemove', 'touchstart'];
+  events.forEach(event => {
+    document.addEventListener(event, updateLastActivity, { passive: true });
+  });
+  
+  // Set up periodic session duration reporting
+  setInterval(reportSessionDuration, 30000); // Report every 30 seconds
+  
+  // Set up visibility change tracking
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // Set up beforeunload to track session end
+  window.addEventListener('beforeunload', endSession);
+};
+
+const updateLastActivity = () => {
+  lastActivityTime = Date.now();
+};
+
+const reportSessionDuration = () => {
+  if (!isSessionActive) return;
+  
+  const currentTime = Date.now();
+  const sessionDuration = Math.round((currentTime - sessionStartTime) / 1000); // in seconds
+  const timeSinceActivity = Math.round((currentTime - lastActivityTime) / 1000);
+  
+  // Only report if user was active recently (within 60 seconds)
+  if (timeSinceActivity < 60) {
+    trackEvent('session_duration', 'engagement', 'active_session', sessionDuration);
+    console.log(`Session duration: ${sessionDuration}s, last activity: ${timeSinceActivity}s ago`);
+  }
+};
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    // Page became hidden - track session pause
+    const sessionDuration = Math.round((Date.now() - sessionStartTime) / 1000);
+    trackEvent('session_pause', 'engagement', 'page_hidden', sessionDuration);
+  } else {
+    // Page became visible - update activity
+    updateLastActivity();
+    trackEvent('session_resume', 'engagement', 'page_visible');
+  }
+};
+
+export const endSession = () => {
+  if (!isSessionActive) return;
+  
+  const sessionDuration = Math.round((Date.now() - sessionStartTime) / 1000);
+  trackEvent('session_end', 'engagement', 'session_complete', sessionDuration);
+  
+  console.log(`Session ended. Total duration: ${sessionDuration}s`);
+  isSessionActive = false;
+};
+
+// Get current session info
+export const getSessionInfo = () => {
+  if (!isSessionActive) return null;
+  
+  const currentTime = Date.now();
+  return {
+    duration: Math.round((currentTime - sessionStartTime) / 1000),
+    timeSinceActivity: Math.round((currentTime - lastActivityTime) / 1000),
+    isActive: isSessionActive
+  };
 };

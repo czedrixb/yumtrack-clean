@@ -116,6 +116,7 @@ The application follows a modern full-stack architecture with clear separation o
 
 ```
 Changelog:
+- July 14, 2025. Updated Google Analytics key and implemented comprehensive session duration tracking with user engagement metrics
 - July 06, 2025. Added Google Analytics integration for user tracking and session analytics
 - July 04, 2025. Renamed app from NutriSnap to YumTrack
 - July 03, 2025. Initial setup
