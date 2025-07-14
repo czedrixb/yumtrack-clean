@@ -11,11 +11,6 @@ export default function PWAInstallBanner() {
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
 
   useEffect(() => {
-    // Don't show PWA banner in webviews - the webview helper handles this
-    if (isInWebView) {
-      return;
-    }
-    
     // Show banner if app can be installed and user hasn't dismissed it
     const dismissed = localStorage.getItem('nutrisnap-install-dismissed');
     
@@ -24,15 +19,28 @@ export default function PWAInstallBanner() {
       const timer = setTimeout(() => setIsVisible(true), 3000);
       return () => clearTimeout(timer);
     }
-  }, [canInstall, isInstalled, isInWebView]);
+  }, [canInstall, isInstalled]);
 
   const handleInstall = async () => {
     trackEvent('pwa_install_attempt', 'engagement', 'banner_click');
     
-    // If in webview, show instructions modal instead of trying to install
+    // If in webview (messenger/kakaotalk), open in browser directly
     if (isInWebView) {
-      trackEvent('pwa_install_webview_detected', 'engagement', 'banner_click');
-      setShowInstallModal(true);
+      const currentUrl = window.location.href;
+      const userAgent = navigator.userAgent.toLowerCase();
+      
+      trackEvent('webview_browser_redirect', 'engagement', 'install_redirect');
+      
+      if (userAgent.includes('kakaotalk')) {
+        // KakaoTalk specific - open in external browser
+        window.open(`kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`, '_blank');
+      } else if (userAgent.includes('messenger') || userAgent.includes('fban') || userAgent.includes('fbav')) {
+        // Facebook Messenger - use intent to open in browser
+        window.open(`intent://browse#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`, '_blank');
+      } else {
+        // Generic webview fallback
+        window.open(currentUrl, '_blank');
+      }
       return;
     }
     

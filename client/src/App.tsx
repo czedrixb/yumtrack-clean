@@ -38,7 +38,7 @@ function Router() {
   return (
     <div className="min-h-screen bg-background pb-16">
       <PWAInstallBanner />
-      <WebViewHelper isInWebView={isInWebView} />
+      {/* WebViewHelper removed - PWAInstallBanner now handles webview users directly */}
       <Switch>
         <Route path="/">
           <Home ref={homeRef} />
