@@ -14,9 +14,9 @@ export default function PWAInstallBanner() {
     // Show banner if app can be installed and user hasn't dismissed it
     const dismissed = localStorage.getItem('nutrisnap-install-dismissed');
     
-    // Always show banner after 3 seconds if not installed and not dismissed
+    // Always show banner after 1 second if not installed and not dismissed
     if (!isInstalled && !dismissed) {
-      const timer = setTimeout(() => setIsVisible(true), 3000);
+      const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
     }
   }, [canInstall, isInstalled]);
@@ -83,6 +83,7 @@ export default function PWAInstallBanner() {
         if (installed) {
           trackEvent('pwa_install_success', 'engagement', 'automatic_install');
           setIsVisible(false);
+          localStorage.setItem('nutrisnap-install-dismissed', 'true');
           return;
         }
       } catch (error) {
@@ -91,8 +92,9 @@ export default function PWAInstallBanner() {
       }
     }
     
-    // If automatic install isn't available, show manual instructions
-    setShowInstallModal(true);
+    // If automatic install isn't available, try to trigger browser install
+    // This will prompt the user to install if possible
+    trackEvent('pwa_install_manual_attempt', 'engagement', 'browser_prompt');
   };
 
   const getInstallInstructions = () => {
