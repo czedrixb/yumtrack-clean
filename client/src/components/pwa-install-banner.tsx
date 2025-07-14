@@ -11,6 +11,11 @@ export default function PWAInstallBanner() {
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
 
   useEffect(() => {
+    // Don't show PWA banner in webviews - the webview helper handles this
+    if (isInWebView) {
+      return;
+    }
+    
     // Show banner if app can be installed and user hasn't dismissed it
     const dismissed = localStorage.getItem('nutrisnap-install-dismissed');
     
@@ -19,7 +24,7 @@ export default function PWAInstallBanner() {
       const timer = setTimeout(() => setIsVisible(true), 3000);
       return () => clearTimeout(timer);
     }
-  }, [canInstall, isInstalled]);
+  }, [canInstall, isInstalled, isInWebView]);
 
   const handleInstall = async () => {
     trackEvent('pwa_install_attempt', 'engagement', 'banner_click');
