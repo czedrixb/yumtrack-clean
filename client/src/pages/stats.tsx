@@ -75,13 +75,13 @@ export default function Stats() {
             </div>
             <div className="text-center p-3 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-foreground">{weeklyCalories.toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">Total Calories</div>
+              <div className="text-sm text-muted-foreground">Total kcal</div>
             </div>
           </div>
           
           <div className="text-center p-3 bg-muted/50 rounded-lg">
             <div className="text-2xl font-bold text-foreground">{avgCaloriesPerMeal}</div>
-            <div className="text-sm text-muted-foreground">Avg Calories/Meal</div>
+            <div className="text-sm text-muted-foreground">Avg kcal/Meal</div>
           </div>
         </CardContent>
       </Card>
@@ -102,7 +102,7 @@ export default function Stats() {
           
           <div>
             <div className="flex justify-between text-sm mb-2">
-              <span>Calories</span>
+              <span>kcal</span>
               <span>{weeklyCalories.toLocaleString()}</span>
             </div>
             <Progress value={Math.min((weeklyCalories / 14000) * 100, 100)} className="h-2" />

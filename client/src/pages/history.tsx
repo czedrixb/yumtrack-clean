@@ -99,7 +99,7 @@ export default function History() {
                   />
                   <div className="flex-1">
                     <h4 className="font-semibold text-foreground">{analysis.foodName}</h4>
-                    <p className="text-sm text-muted-foreground">{analysis.calories} calories</p>
+                    <p className="text-sm text-muted-foreground">{analysis.calories} kcal</p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })}
                     </p>

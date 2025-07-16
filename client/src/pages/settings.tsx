@@ -110,13 +110,13 @@ export default function Settings() {
 
   const handleInstallApp = async () => {
     trackEvent("pwa_install_attempt", "engagement", "settings_page");
-    
+
     // Debug logging
-    console.log('Settings Install Debug:', {
+    console.log("Settings Install Debug:", {
       isInstalled,
       canInstall,
       isInWebView,
-      userAgent: navigator.userAgent
+      userAgent: navigator.userAgent,
     });
 
     // If in webview (messenger/kakaotalk), open in browser directly
@@ -203,9 +203,8 @@ export default function Settings() {
       } else {
         // If PWA install isn't available, show unavailable message
         toast({
-          title: "Install not available",
-          description: "PWA installation is not available in this browser. Try using Chrome or Edge.",
-          variant: "destructive",
+          title: "App already installed",
+          description: "YumTrack is already installed on your home screen.",
         });
         trackEvent("pwa_install_unavailable", "engagement", "settings_install");
       }

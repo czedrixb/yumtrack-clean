@@ -116,6 +116,8 @@ The application follows a modern full-stack architecture with clear separation o
 
 ```
 Changelog:
+- July 16, 2025. Changed calorie measurement display from "calories" to "kcal" throughout the app for better international standards
+- July 16, 2025. Removed PWA install features (banner and settings section) on desktop devices, keeping them mobile-only
 - July 14, 2025. Updated Google Analytics key and implemented comprehensive session duration tracking with user engagement metrics
 - July 06, 2025. Added Google Analytics integration for user tracking and session analytics
 - July 04, 2025. Renamed app from NutriSnap to YumTrack

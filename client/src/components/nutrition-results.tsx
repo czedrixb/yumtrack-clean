@@ -108,7 +108,7 @@ export default function NutritionResults({
           {/* Calorie Summary */}
           <div className="bg-gradient-primary rounded-xl p-6 text-white text-center">
             <div className="text-4xl font-bold">{analysis.calories}</div>
-            <div className="text-lg font-medium">Total Calories</div>
+            <div className="text-lg font-medium">Total kcal</div>
             <div className="text-sm opacity-90 mt-1">{analysis.servingSize}</div>
           </div>
         </CardContent>
