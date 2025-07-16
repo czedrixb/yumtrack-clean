@@ -3,7 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
@@ -12,15 +22,22 @@ import { trackEvent } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import emailjs from '@emailjs/browser';
+import emailjs from "@emailjs/browser";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
-  message: z.string().min(10, "Message must be at least 10 characters")
+  message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
 export default function Settings() {
@@ -32,22 +49,23 @@ export default function Settings() {
 
   const { toast } = useToast();
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
-  
+
   const contactForm = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
       name: "",
       email: "",
-      message: ""
-    }
+      message: "",
+    },
   });
 
   useEffect(() => {
     // Load settings from localStorage
-    const savedNotifications = localStorage.getItem('nutrisnap-notifications');
-    const savedDarkMode = localStorage.getItem('nutrisnap-dark-mode');
+    const savedNotifications = localStorage.getItem("nutrisnap-notifications");
+    const savedDarkMode = localStorage.getItem("nutrisnap-dark-mode");
 
-    if (savedNotifications !== null) setNotifications(JSON.parse(savedNotifications));
+    if (savedNotifications !== null)
+      setNotifications(JSON.parse(savedNotifications));
     if (savedDarkMode !== null) setDarkMode(JSON.parse(savedDarkMode));
   }, []);
 
@@ -62,12 +80,12 @@ export default function Settings() {
   const handleClearHistory = async () => {
     setIsClearing(true);
     try {
-      const response = await fetch('/api/food-analyses', {
-        method: 'DELETE',
+      const response = await fetch("/api/food-analyses", {
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to clear history');
+        throw new Error("Failed to clear history");
       }
 
       toast({
@@ -89,67 +107,71 @@ export default function Settings() {
   };
 
   const handleInstallApp = async () => {
-    trackEvent('pwa_install_attempt', 'engagement', 'settings_page');
-    
+    trackEvent("pwa_install_attempt", "engagement", "settings_page");
+
     // If in webview (messenger/kakaotalk), open in browser directly
     if (isInWebView) {
       const currentUrl = window.location.href;
       const userAgent = navigator.userAgent.toLowerCase();
-      
-      trackEvent('webview_browser_redirect', 'engagement', 'settings_install');
-      
+
+      trackEvent("webview_browser_redirect", "engagement", "settings_install");
+
       // Try multiple methods to open in browser
       let opened = false;
-      
-      if (userAgent.includes('kakaotalk')) {
+
+      if (userAgent.includes("kakaotalk")) {
         // KakaoTalk specific methods
         try {
           // Method 1: KakaoTalk external browser
           window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
           opened = true;
         } catch (e) {
-          console.log('KakaoTalk method 1 failed, trying fallback');
+          console.log("KakaoTalk method 1 failed, trying fallback");
         }
-      } else if (userAgent.includes('messenger') || userAgent.includes('fban') || userAgent.includes('fbav')) {
+      } else if (
+        userAgent.includes("messenger") ||
+        userAgent.includes("fban") ||
+        userAgent.includes("fbav")
+      ) {
         // Facebook Messenger methods
         try {
           // Method 1: Android intent
-          if (userAgent.includes('android')) {
+          if (userAgent.includes("android")) {
             window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`;
             opened = true;
           }
         } catch (e) {
-          console.log('Messenger method 1 failed, trying fallback');
+          console.log("Messenger method 1 failed, trying fallback");
         }
       }
-      
+
       // Universal fallback methods
       if (!opened) {
         try {
           // Method 2: Try to open in new window/tab
-          const newWindow = window.open(currentUrl, '_blank');
+          const newWindow = window.open(currentUrl, "_blank");
           if (newWindow) {
             opened = true;
           }
         } catch (e) {
-          console.log('Window.open failed, trying location change');
+          console.log("Window.open failed, trying location change");
         }
       }
-      
+
       // Last resort: direct location change
       if (!opened) {
         window.location.href = currentUrl;
       }
-      
+
       return;
     }
-    
+
     // For regular browsers, attempt PWA installation
     if (canInstall && install) {
       try {
         const installed = await install();
         if (installed) {
-          trackEvent('pwa_install_success', 'engagement', 'settings_install');
+          trackEvent("pwa_install_success", "engagement", "settings_install");
           toast({
             title: "App installed",
             description: "YumTrack has been added to your home screen.",
@@ -157,8 +179,8 @@ export default function Settings() {
           return;
         }
       } catch (error) {
-        console.error('Installation failed:', error);
-        trackEvent('pwa_install_failed', 'engagement', 'settings_install');
+        console.error("Installation failed:", error);
+        trackEvent("pwa_install_failed", "engagement", "settings_install");
       }
     } else {
       // Check if app is already installed
@@ -167,14 +189,14 @@ export default function Settings() {
           title: "App already installed",
           description: "YumTrack is already installed on your home screen.",
         });
-        trackEvent('pwa_already_installed', 'engagement', 'settings_install');
+        trackEvent("pwa_already_installed", "engagement", "settings_install");
       } else {
         // If PWA install isn't available, show fallback message
         toast({
-          title: "Install not available",
-          description: "PWA installation is not supported on this device or browser.",
+          title: "App already installed",
+          description: "YumTrack is already installed on your home screen.",
         });
-        trackEvent('pwa_install_unavailable', 'engagement', 'settings_install');
+        trackEvent("pwa_install_unavailable", "engagement", "settings_install");
       }
     }
   };
@@ -183,14 +205,14 @@ export default function Settings() {
     setIsSubmitting(true);
     try {
       // EmailJS configuration - temporary hardcoded values for testing
-      const serviceID = 'service_98xbwrl';
-      const templateID = 'template_a9bagiw';
-      const publicKey = 'CQ8ikKs9ILlgDBEPm';
+      const serviceID = "service_98xbwrl";
+      const templateID = "template_a9bagiw";
+      const publicKey = "CQ8ikKs9ILlgDBEPm";
 
-      console.log('EmailJS Config:', { serviceID, templateID, publicKey });
+      console.log("EmailJS Config:", { serviceID, templateID, publicKey });
 
       if (!serviceID || !templateID || !publicKey) {
-        throw new Error('EmailJS configuration missing');
+        throw new Error("EmailJS configuration missing");
       }
 
       // Initialize EmailJS with public key
@@ -199,27 +221,28 @@ export default function Settings() {
       const templateParams = {
         from_name: values.name,
         from_email: values.email,
-        to_email: 'uedu.dev@gmail.com',
+        to_email: "uedu.dev@gmail.com",
         message: values.message,
-        app_name: 'YumTrack',
-        subject: `YumTrack Support: Contact from ${values.name}`
+        app_name: "YumTrack",
+        subject: `YumTrack Support: Contact from ${values.name}`,
       };
 
-      console.log('Sending email with params:', templateParams);
+      console.log("Sending email with params:", templateParams);
 
       const result = await emailjs.send(serviceID, templateID, templateParams);
-      console.log('EmailJS Success:', result);
-      
+      console.log("EmailJS Success:", result);
+
       toast({
         title: "Message sent",
-        description: "Your support request has been sent to W Soft Labs. We'll get back to you soon!",
+        description:
+          "Your support request has been sent to W Soft Labs. We'll get back to you soon!",
       });
-      
+
       contactForm.reset();
       setShowContactModal(false);
     } catch (error) {
-      console.error('EmailJS error:', error);
-      console.error('Error details:', JSON.stringify(error));
+      console.error("EmailJS error:", error);
+      console.error("Error details:", JSON.stringify(error));
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
@@ -230,15 +253,13 @@ export default function Settings() {
     }
   };
 
-
-
-
-
   return (
     <main className="max-w-sm mx-auto px-4 py-6 space-y-6">
       <header className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground text-sm">Customize your YumTrack experience</p>
+        <p className="text-muted-foreground text-sm">
+          Customize your YumTrack experience
+        </p>
       </header>
 
       {/* App Settings */}
@@ -250,14 +271,16 @@ export default function Settings() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-0.5 flex-1">
               <Label htmlFor="notifications">Push Notifications</Label>
-              <p className="text-sm text-muted-foreground">Get notified about new features</p>
+              <p className="text-sm text-muted-foreground">
+                Get notified about new features
+              </p>
             </div>
             <Switch
               id="notifications"
               checked={notifications}
               onCheckedChange={(checked) => {
                 setNotifications(checked);
-                updateSetting('nutrisnap-notifications', checked);
+                updateSetting("nutrisnap-notifications", checked);
               }}
             />
           </div>
@@ -267,20 +290,20 @@ export default function Settings() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-0.5 flex-1">
               <Label htmlFor="dark-mode">Dark Mode</Label>
-              <p className="text-sm text-muted-foreground">Switch to dark theme</p>
+              <p className="text-sm text-muted-foreground">
+                Switch to dark theme
+              </p>
             </div>
             <Switch
               id="dark-mode"
               checked={darkMode}
               onCheckedChange={(checked) => {
                 setDarkMode(checked);
-                updateSetting('nutrisnap-dark-mode', checked);
-                document.documentElement.classList.toggle('dark', checked);
+                updateSetting("nutrisnap-dark-mode", checked);
+                document.documentElement.classList.toggle("dark", checked);
               }}
             />
           </div>
-
-
         </CardContent>
       </Card>
 
@@ -293,12 +316,24 @@ export default function Settings() {
           {isInstalled ? (
             <div className="text-center space-y-3">
               <div className="w-12 h-12 mx-auto flex items-center justify-center bg-green-100 dark:bg-green-900 rounded-full">
-                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                <svg
+                  className="w-6 h-6 text-green-600 dark:text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-foreground">App Already Installed</p>
+                <p className="font-medium text-foreground">
+                  App Already Installed
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   YumTrack is installed on your home screen
                 </p>
@@ -316,10 +351,9 @@ export default function Settings() {
                 Install
               </Button>
               <p className="text-sm text-muted-foreground mt-2">
-                {isInWebView 
+                {isInWebView
                   ? "You're in a messenger app. Tap Install to learn how to open in your browser first."
-                  : "Install YumTrack on your device for faster access and an app-like experience"
-                }
+                  : "Install YumTrack on your device for faster access and an app-like experience"}
               </p>
             </>
           )}
@@ -338,8 +372,18 @@ export default function Settings() {
                 variant="outline"
                 className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  ></path>
                 </svg>
                 Clear All History
               </Button>
@@ -348,7 +392,9 @@ export default function Settings() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Clear All History</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to clear all analysis history? This will permanently delete all your food analyses and cannot be undone.
+                  Are you sure you want to clear all analysis history? This will
+                  permanently delete all your food analyses and cannot be
+                  undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -374,19 +420,50 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 mx-auto flex items-center justify-center">
-              <svg width="64" height="64" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="64"
+                height="64"
+                viewBox="0 0 100 100"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 {/* Magnifying glass circle */}
-                <circle cx="45" cy="45" r="30" stroke="#fd7e14" strokeWidth="10" fill="none"/>
+                <circle
+                  cx="45"
+                  cy="45"
+                  r="30"
+                  stroke="#fd7e14"
+                  strokeWidth="10"
+                  fill="none"
+                />
                 {/* Magnifying glass handle */}
-                <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" strokeWidth="12" strokeLinecap="round"/>
+                <line
+                  x1="68"
+                  y1="68"
+                  x2="85"
+                  y2="85"
+                  stroke="#fd7e14"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                />
                 {/* Leaf inside the glass */}
-                <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
-                <path d="M45,55 C47,45 55,43 55,35" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                <path
+                  d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z"
+                  fill="#28a745"
+                />
+                <path
+                  d="M45,55 C47,45 55,43 55,35"
+                  stroke="white"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeLinecap="round"
+                />
               </svg>
             </div>
             <h3 className="font-semibold text-foreground">YumTrack</h3>
             <p className="text-sm text-muted-foreground">Version 1.0.0</p>
-            <p className="text-xs text-muted-foreground">AI-powered nutrition analysis</p>
+            <p className="text-xs text-muted-foreground">
+              AI-powered nutrition analysis
+            </p>
           </div>
 
           <div className="text-center space-y-2">
@@ -396,8 +473,8 @@ export default function Settings() {
             <Button variant="link" className="text-sm">
               Terms of Service
             </Button>
-            <Button 
-              variant="link" 
+            <Button
+              variant="link"
               className="text-sm"
               onClick={() => setShowContactModal(true)}
             >
@@ -413,12 +490,16 @@ export default function Settings() {
           <AlertDialogHeader>
             <AlertDialogTitle>Contact Support</AlertDialogTitle>
             <AlertDialogDescription>
-              Send a message to W Soft Labs support team. We'll get back to you as soon as possible.
+              Send a message to W Soft Labs support team. We'll get back to you
+              as soon as possible.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <Form {...contactForm}>
-            <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-4">
+            <form
+              onSubmit={contactForm.handleSubmit(onContactSubmit)}
+              className="space-y-4"
+            >
               <FormField
                 control={contactForm.control}
                 name="name"
@@ -432,7 +513,7 @@ export default function Settings() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={contactForm.control}
                 name="email"
@@ -440,13 +521,17 @@ export default function Settings() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="your@email.com" {...field} />
+                      <Input
+                        type="email"
+                        placeholder="your@email.com"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={contactForm.control}
                 name="message"
@@ -454,17 +539,17 @@ export default function Settings() {
                   <FormItem>
                     <FormLabel>Message</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         placeholder="Describe your issue, feature request, or question..."
                         rows={4}
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setShowContactModal(false)}>
                   Cancel
