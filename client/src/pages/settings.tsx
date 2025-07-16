@@ -141,32 +141,13 @@ export default function Settings() {
       return;
     }
     
-    // For regular browsers, attempt PWA installation
+    // For regular browsers, attempt PWA installation silently
     if (canInstall && install) {
       try {
-        const installed = await install();
-        console.log('Installation result:', installed);
-        if (installed) {
-          toast({
-            title: "App installed",
-            description: "YumTrack has been added to your home screen.",
-          });
-          return;
-        }
+        await install();
       } catch (error) {
         console.error('Installation failed:', error);
-        toast({
-          title: "Installation failed",
-          description: "Please try again or use Chrome/Safari for better support.",
-          variant: "destructive",
-        });
       }
-    } else {
-      // If PWA install isn't available, show manual instructions
-      toast({
-        title: "Manual installation required",
-        description: "Use your browser's menu to 'Add to Home Screen' or 'Install App'.",
-      });
     }
   };
 
