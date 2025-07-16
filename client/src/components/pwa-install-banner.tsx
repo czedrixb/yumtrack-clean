@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { X, Download } from "lucide-react";
+
+import { Download } from "lucide-react";
 import { usePWA } from "@/hooks/use-pwa";
 import { trackEvent } from "@/lib/analytics";
 
 export default function PWAInstallBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
 
   useEffect(() => {
@@ -102,77 +101,13 @@ export default function PWAInstallBanner() {
         trackEvent('pwa_install_failed', 'engagement', 'automatic_install');
       }
     } else {
-      // If PWA install isn't available, show manual instructions
-      setShowInstallModal(true);
-      trackEvent('pwa_install_manual_prompt', 'engagement', 'show_instructions');
+      // If PWA install isn't available, hide the banner
+      setIsVisible(false);
+      trackEvent('pwa_install_unavailable', 'engagement', 'banner_attempt');
     }
   };
 
-  const getInstallInstructions = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    
-    // Special instructions for webview contexts
-    if (isInWebView) {
-      const userAgent = navigator.userAgent.toLowerCase();
-      const isKakao = userAgent.includes('kakaotalk');
-      const isFacebook = userAgent.includes('fban') || userAgent.includes('fbav');
-      
-      let appName = "messenger app";
-      if (isKakao) appName = "KakaoTalk";
-      else if (isFacebook) appName = "Facebook Messenger";
-      
-      return {
-        title: `Add to Home Screen from ${appName}`,
-        description: `While PWA installation isn't available in ${appName}, you can still add YumTrack to your home screen for quick access.`,
-        steps: isIOS ? [
-          isKakao ? "Tap the Safari icon (🌐) at the bottom" : "Tap the Share button (□↗) at the bottom",
-          isKakao ? "This opens the page in Safari" : "Select 'Open in Safari'",
-          "In Safari, tap the Share button again",
-          "Scroll down and tap 'Add to Home Screen'",
-          "Tap 'Add' to create a shortcut"
-        ] : [
-          isKakao ? "Tap the browser icon at the top right" : "Tap the menu (⋮) in the top right",
-          isKakao ? "Select your default browser" : "Select 'Open in Browser' or 'Open in Chrome'",
-          "In your browser, tap the menu (⋮) again",
-          "Look for 'Add to Home screen'",
-          "Tap to create a shortcut"
-        ]
-      };
-    }
-    
-    if (isIOS) {
-      return {
-        title: "Install on iOS",
-        description: "Install YumTrack as an app on your iPhone or iPad for faster access.",
-        steps: [
-          "Tap the Share button (□↗) in Safari",
-          "Scroll down and tap 'Add to Home Screen'",
-          "Tap 'Add' to confirm"
-        ]
-      };
-    } else if (isAndroid) {
-      return {
-        title: "Install on Android",
-        description: "Install YumTrack as an app on your Android device for faster access.",
-        steps: [
-          "Tap the menu (⋮) in Chrome",
-          "Tap 'Add to Home screen'",
-          "Tap 'Add' to confirm"
-        ]
-      };
-    } else {
-      return {
-        title: "Install on Desktop",
-        description: "Install YumTrack as an app on your computer for faster access.",
-        steps: [
-          "Look for the install button (⊕) in your browser's address bar",
-          "Or check the browser menu for 'Install app' option",
-          "Click to install the app"
-        ]
-      };
-    }
-  };
+
 
   const handleDismiss = () => {
     trackEvent('pwa_install_dismiss', 'engagement', 'banner_dismiss');
@@ -214,33 +149,6 @@ export default function PWAInstallBanner() {
           </div>
         </div>
       </div>
-
-      {/* Install Instructions Modal */}
-      <AlertDialog open={showInstallModal} onOpenChange={setShowInstallModal}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{getInstallInstructions().title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {getInstallInstructions().description || "Follow these steps to install YumTrack as an app on your device:"}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-3 my-4">
-            {getInstallInstructions().steps.map((step, index) => (
-              <div key={index} className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                  {index + 1}
-                </div>
-                <p className="text-sm text-foreground flex-1">{step}</p>
-              </div>
-            ))}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowInstallModal(false)}>
-              Got it
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
