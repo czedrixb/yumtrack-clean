@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { usePWA } from "@/hooks/use-pwa";
 import { trackEvent } from "@/lib/analytics";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function PWAInstallBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Show banner if app can be installed and user hasn't dismissed it
@@ -115,7 +117,7 @@ export default function PWAInstallBanner() {
     localStorage.setItem('nutrisnap-install-dismissed', 'true');
   };
 
-  if (!isVisible || isInstalled) {
+  if (!isVisible || isInstalled || !isMobile) {
     return null;
   }
 
