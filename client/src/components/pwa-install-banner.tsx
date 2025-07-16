@@ -91,11 +91,11 @@ export default function PWAInstallBanner() {
         console.error('Installation failed:', error);
         trackEvent('pwa_install_failed', 'engagement', 'automatic_install');
       }
-    } else {
-      // If PWA install isn't available, show manual instructions
-      setShowInstallModal(true);
-      trackEvent('pwa_install_manual_prompt', 'engagement', 'show_instructions');
     }
+    
+    // If PWA install isn't available, show manual instructions
+    setShowInstallModal(true);
+    trackEvent('pwa_install_manual_prompt', 'engagement', 'show_instructions');
   };
 
   const getInstallInstructions = () => {

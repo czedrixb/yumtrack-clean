@@ -155,13 +155,17 @@ export default function Settings() {
         }
       } catch (error) {
         console.error('Installation failed:', error);
+        toast({
+          title: "Installation failed",
+          description: "Please try again or use Chrome/Safari for better support.",
+          variant: "destructive",
+        });
       }
     } else {
-      // If PWA install isn't available, show message
+      // If PWA install isn't available, show manual instructions
       toast({
-        title: "Installation not available",
-        description: "Your browser doesn't support app installation. Try using Chrome or Safari.",
-        variant: "destructive",
+        title: "Manual installation required",
+        description: "Use your browser's menu to 'Add to Home Screen' or 'Install App'.",
       });
     }
   };
