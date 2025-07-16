@@ -14,10 +14,13 @@ export default function PWAInstallBanner() {
     // Show banner if app can be installed and user hasn't dismissed it
     const dismissed = localStorage.getItem('nutrisnap-install-dismissed');
     
-    // Always show banner after 1 second if not installed and not dismissed
+    // Only show banner if app is NOT installed and not dismissed
     if (!isInstalled && !dismissed) {
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
+    } else {
+      // Hide banner if app is installed
+      setIsVisible(false);
     }
   }, [canInstall, isInstalled]);
 

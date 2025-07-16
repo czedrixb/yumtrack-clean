@@ -161,12 +161,21 @@ export default function Settings() {
         trackEvent('pwa_install_failed', 'engagement', 'settings_install');
       }
     } else {
-      // If PWA install isn't available, show fallback message
-      toast({
-        title: "Install not available",
-        description: "PWA installation is not supported on this device or browser.",
-      });
-      trackEvent('pwa_install_unavailable', 'engagement', 'settings_install');
+      // Check if app is already installed
+      if (isInstalled) {
+        toast({
+          title: "App already installed",
+          description: "YumTrack is already installed on your home screen.",
+        });
+        trackEvent('pwa_already_installed', 'engagement', 'settings_install');
+      } else {
+        // If PWA install isn't available, show fallback message
+        toast({
+          title: "Install not available",
+          description: "PWA installation is not supported on this device or browser.",
+        });
+        trackEvent('pwa_install_unavailable', 'engagement', 'settings_install');
+      }
     }
   };
 
