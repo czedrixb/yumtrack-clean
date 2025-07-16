@@ -155,6 +155,11 @@ export default function PWAInstallBanner() {
               <div className="text-sm font-medium">
                 {isInstalled ? 'App Installed' : 'Get the App'}
               </div>
+              {isInstalled && (
+                <div className="text-xs text-white/80 mt-0.5">
+                  Now added to your homescreen
+                </div>
+              )}
             </div>
           </div>
           <div className="flex space-x-2">
