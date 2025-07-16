@@ -77,24 +77,24 @@ export default function PWAInstallBanner() {
       return;
     }
     
-    // For regular browsers, attempt PWA installation silently
-    console.log('Download button clicked - canInstall:', canInstall, 'install:', !!install);
+    // For regular browsers, attempt PWA installation
     if (canInstall && install) {
       try {
-        console.log('Attempting PWA installation...');
         const installed = await install();
-        console.log('Installation result:', installed);
         if (installed) {
           trackEvent('pwa_install_success', 'engagement', 'automatic_install');
           setIsVisible(false);
           localStorage.setItem('nutrisnap-install-dismissed', 'true');
+          return;
         }
       } catch (error) {
         console.error('Installation failed:', error);
         trackEvent('pwa_install_failed', 'engagement', 'automatic_install');
       }
     } else {
-      console.log('Cannot install - canInstall:', canInstall, 'install function exists:', !!install);
+      // If PWA install isn't available, show manual instructions
+      setShowInstallModal(true);
+      trackEvent('pwa_install_manual_prompt', 'engagement', 'show_instructions');
     }
   };
 

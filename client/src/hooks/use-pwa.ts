@@ -56,14 +56,12 @@ export function usePWA() {
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('beforeinstallprompt event received!');
       e.preventDefault();
       const event = e as BeforeInstallPromptEvent;
       setDeferredPrompt(event);
       setCanInstall(true);
       // Store globally as backup
       (window as any).deferredPrompt = event;
-      console.log('PWA install prompt is now available');
     };
 
     // Listen for app installed event
