@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
 import { Download, Mail } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -88,14 +89,67 @@ export default function Settings() {
   };
 
   const handleInstallApp = async () => {
-    console.log('Install button clicked, canInstall:', canInstall);
+    trackEvent('pwa_install_attempt', 'engagement', 'settings_page');
     
-    // First try the standard PWA install if available
-    if (canInstall) {
+    // If in webview (messenger/kakaotalk), open in browser directly
+    if (isInWebView) {
+      const currentUrl = window.location.href;
+      const userAgent = navigator.userAgent.toLowerCase();
+      
+      trackEvent('webview_browser_redirect', 'engagement', 'settings_install');
+      
+      // Try multiple methods to open in browser
+      let opened = false;
+      
+      if (userAgent.includes('kakaotalk')) {
+        // KakaoTalk specific methods
+        try {
+          // Method 1: KakaoTalk external browser
+          window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
+          opened = true;
+        } catch (e) {
+          console.log('KakaoTalk method 1 failed, trying fallback');
+        }
+      } else if (userAgent.includes('messenger') || userAgent.includes('fban') || userAgent.includes('fbav')) {
+        // Facebook Messenger methods
+        try {
+          // Method 1: Android intent
+          if (userAgent.includes('android')) {
+            window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`;
+            opened = true;
+          }
+        } catch (e) {
+          console.log('Messenger method 1 failed, trying fallback');
+        }
+      }
+      
+      // Universal fallback methods
+      if (!opened) {
+        try {
+          // Method 2: Try to open in new window/tab
+          const newWindow = window.open(currentUrl, '_blank');
+          if (newWindow) {
+            opened = true;
+          }
+        } catch (e) {
+          console.log('Window.open failed, trying location change');
+        }
+      }
+      
+      // Last resort: direct location change
+      if (!opened) {
+        window.location.href = currentUrl;
+      }
+      
+      return;
+    }
+    
+    // For regular browsers, attempt PWA installation
+    if (canInstall && install) {
       try {
         const installed = await install();
-        console.log('Installation result:', installed);
         if (installed) {
+          trackEvent('pwa_install_success', 'engagement', 'settings_install');
           toast({
             title: "App installed",
             description: "YumTrack has been added to your home screen.",
@@ -104,31 +158,16 @@ export default function Settings() {
         }
       } catch (error) {
         console.error('Installation failed:', error);
+        trackEvent('pwa_install_failed', 'engagement', 'settings_install');
       }
+    } else {
+      // If PWA install isn't available, show fallback message
+      toast({
+        title: "Install not available",
+        description: "PWA installation is not supported on this device or browser.",
+      });
+      trackEvent('pwa_install_unavailable', 'engagement', 'settings_install');
     }
-    
-    // If standard install isn't available, try to trigger the prompt manually
-    // This handles cases where the prompt event wasn't captured on initial load
-    try {
-      // Check if there's a global beforeinstallprompt event we can use
-      const event = (window as any).deferredPrompt;
-      if (event) {
-        await event.prompt();
-        const choiceResult = await event.userChoice;
-        if (choiceResult.outcome === 'accepted') {
-          toast({
-            title: "App installed",
-            description: "YumTrack has been added to your home screen.",
-          });
-        }
-        return;
-      }
-    } catch (error) {
-      console.error('Manual install prompt failed:', error);
-    }
-    
-    // If nothing worked, just log it - don't show modal
-    console.log('Install not available on this device/browser');
   };
 
   const onContactSubmit = async (values: z.infer<typeof contactSchema>) => {
