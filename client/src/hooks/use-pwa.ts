@@ -19,7 +19,17 @@ export function usePWA() {
     // Check if app is already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInWebApp = (window.navigator as any).standalone === true;
-    setIsInstalled(isStandalone || isInWebApp);
+    const installed = isStandalone || isInWebApp;
+    
+    // Debug logging
+    console.log('PWA Detection:', {
+      isStandalone,
+      isInWebApp,
+      installed,
+      userAgent: navigator.userAgent
+    });
+    
+    setIsInstalled(installed);
 
     // Detect if running in webview (messenger apps, KakaoTalk, etc.)
     const detectWebView = () => {

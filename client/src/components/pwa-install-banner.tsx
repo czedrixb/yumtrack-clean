@@ -27,6 +27,13 @@ export default function PWAInstallBanner() {
   const handleInstall = async () => {
     trackEvent('pwa_install_attempt', 'engagement', 'banner_click');
     
+    // First check if app is already installed
+    if (isInstalled) {
+      trackEvent('pwa_already_installed', 'engagement', 'banner_click');
+      setIsVisible(false);
+      return;
+    }
+    
     // If in webview (messenger/kakaotalk), open in browser directly
     if (isInWebView) {
       const currentUrl = window.location.href;

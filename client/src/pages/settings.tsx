@@ -108,6 +108,14 @@ export default function Settings() {
 
   const handleInstallApp = async () => {
     trackEvent("pwa_install_attempt", "engagement", "settings_page");
+    
+    // Debug logging
+    console.log('Settings Install Debug:', {
+      isInstalled,
+      canInstall,
+      isInWebView,
+      userAgent: navigator.userAgent
+    });
 
     // If in webview (messenger/kakaotalk), open in browser directly
     if (isInWebView) {
