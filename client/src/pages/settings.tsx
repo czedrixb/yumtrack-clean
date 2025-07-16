@@ -142,12 +142,17 @@ export default function Settings() {
     }
     
     // For regular browsers, attempt PWA installation silently
+    console.log('Settings install button clicked - canInstall:', canInstall, 'install:', !!install);
     if (canInstall && install) {
       try {
-        await install();
+        console.log('Attempting PWA installation from settings...');
+        const installed = await install();
+        console.log('Settings installation result:', installed);
       } catch (error) {
-        console.error('Installation failed:', error);
+        console.error('Settings installation failed:', error);
       }
+    } else {
+      console.log('Settings: Cannot install - canInstall:', canInstall, 'install function exists:', !!install);
     }
   };
 

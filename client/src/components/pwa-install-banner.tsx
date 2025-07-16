@@ -78,9 +78,12 @@ export default function PWAInstallBanner() {
     }
     
     // For regular browsers, attempt PWA installation silently
+    console.log('Download button clicked - canInstall:', canInstall, 'install:', !!install);
     if (canInstall && install) {
       try {
+        console.log('Attempting PWA installation...');
         const installed = await install();
+        console.log('Installation result:', installed);
         if (installed) {
           trackEvent('pwa_install_success', 'engagement', 'automatic_install');
           setIsVisible(false);
@@ -90,6 +93,8 @@ export default function PWAInstallBanner() {
         console.error('Installation failed:', error);
         trackEvent('pwa_install_failed', 'engagement', 'automatic_install');
       }
+    } else {
+      console.log('Cannot install - canInstall:', canInstall, 'install function exists:', !!install);
     }
   };
 
