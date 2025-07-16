@@ -276,31 +276,46 @@ export default function Settings() {
       </Card>
 
       {/* App Installation */}
-      {!isInstalled && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Install App</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="default"
-              className="w-full justify-start"
-              onClick={handleInstallApp}
-              disabled={false}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Install
-            </Button>
-            <p className="text-sm text-muted-foreground mt-2">
-              {isInWebView 
-                ? "You're in a messenger app. Tap Install to learn how to open in your browser first."
-                : "Install YumTrack on your device for faster access and an app-like experience"
-              }
-            </p>
-
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Install App</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isInstalled ? (
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 mx-auto flex items-center justify-center bg-green-100 dark:bg-green-900 rounded-full">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">App Already Installed</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  YumTrack is installed on your home screen
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Button
+                variant="default"
+                className="w-full justify-start"
+                onClick={handleInstallApp}
+                disabled={false}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Install
+              </Button>
+              <p className="text-sm text-muted-foreground mt-2">
+                {isInWebView 
+                  ? "You're in a messenger app. Tap Install to learn how to open in your browser first."
+                  : "Install YumTrack on your device for faster access and an app-like experience"
+                }
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Data Management */}
       <Card>
