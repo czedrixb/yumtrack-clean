@@ -42,7 +42,6 @@ const contactSchema = z.object({
 });
 
 export default function Settings() {
-  const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
@@ -63,11 +62,8 @@ export default function Settings() {
 
   useEffect(() => {
     // Load settings from localStorage
-    const savedNotifications = localStorage.getItem("nutrisnap-notifications");
     const savedDarkMode = localStorage.getItem("nutrisnap-dark-mode");
 
-    if (savedNotifications !== null)
-      setNotifications(JSON.parse(savedNotifications));
     if (savedDarkMode !== null) setDarkMode(JSON.parse(savedDarkMode));
   }, []);
 
@@ -278,25 +274,6 @@ export default function Settings() {
           <CardTitle className="text-lg">App Preferences</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="space-y-0.5 flex-1">
-              <Label htmlFor="notifications">Push Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified about new features
-              </p>
-            </div>
-            <Switch
-              id="notifications"
-              checked={notifications}
-              onCheckedChange={(checked) => {
-                setNotifications(checked);
-                updateSetting("nutrisnap-notifications", checked);
-              }}
-            />
-          </div>
-
-          <Separator />
-
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-0.5 flex-1">
               <Label htmlFor="dark-mode">Dark Mode</Label>
