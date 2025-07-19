@@ -244,7 +244,7 @@ const Home = forwardRef<HomeRef>((props, ref) => {
                 />
                 <div className="flex-1">
                   <h4 className="font-semibold text-foreground">{analysis.foodName}</h4>
-                  <p className="text-sm text-muted-foreground">{analysis.calories} kcal</p>
+                  <p className="text-sm text-muted-foreground">{analysis.calories} Kcal</p>
                   <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })}
                   </p>
