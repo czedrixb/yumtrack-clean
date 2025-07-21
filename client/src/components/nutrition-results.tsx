@@ -52,7 +52,7 @@ export default function NutritionResults({
   const handleShare = async () => {
     const shareData = {
       title: `${analysis.foodName} - Nutrition Analysis`,
-      text: `${analysis.foodName}: ${analysis.calories} calories, ${analysis.protein}g protein, ${analysis.carbohydrates}g carbs, ${analysis.fat}g fat`,
+      text: `${analysis.foodName}: ${analysis.calories} Kcal, ${analysis.protein}g protein, ${analysis.carbohydrates}g carbs, ${analysis.fat}g fat`,
       url: window.location.href,
     };
 
