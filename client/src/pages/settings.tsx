@@ -43,7 +43,10 @@ const contactSchema = z.object({
 
 const feedbackSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  rating: z.number().min(1, "Please select a rating").max(5, "Rating must be between 1 and 5"),
+  rating: z
+    .number()
+    .min(1, "Please select a rating")
+    .max(5, "Rating must be between 1 and 5"),
   message: z.string().min(10, "Feedback must be at least 10 characters"),
 });
 
@@ -247,7 +250,7 @@ export default function Settings() {
         to_name: "W Soft Labs Support",
         to_email: "uedu.dev@gmail.com",
         message: `From: ${values.name} (${values.email})\n\nMessage:\n${values.message}`,
-        subject: "YumTrack Inquery",
+        subject: "YumTrack Inquiry",
         app_name: "YumTrack",
         user_name: values.name,
         user_email: values.email,
@@ -303,7 +306,7 @@ export default function Settings() {
         to_name: "W Soft Labs Support",
         to_email: "uedu.dev@gmail.com",
         message: `From: ${values.name}\nRating: ${values.rating}/5 stars\n\nFeedback:\n${values.message}`,
-        subject: "YumTrack Userfeedback",
+        subject: "YumTrack User Feedback",
         app_name: "YumTrack",
         user_name: values.name,
         user_rating: values.rating,
@@ -652,7 +655,8 @@ export default function Settings() {
           <AlertDialogHeader>
             <AlertDialogTitle>User Feedback</AlertDialogTitle>
             <AlertDialogDescription>
-              Share your thoughts about YumTrack! Tell us what you love, what could be improved, or suggest new features.
+              Share your thoughts about YumTrack! Tell us what you love, what
+              could be improved, or suggest new features.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -696,7 +700,9 @@ export default function Settings() {
                           >
                             <Star
                               className="w-6 h-6"
-                              fill={star <= field.value ? "currentColor" : "none"}
+                              fill={
+                                star <= field.value ? "currentColor" : "none"
+                              }
                             />
                           </button>
                         ))}
