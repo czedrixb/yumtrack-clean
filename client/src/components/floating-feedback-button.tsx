@@ -54,9 +54,12 @@ export default function FloatingFeedbackButton() {
 
     try {
       // EmailJS configuration
-      const serviceID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_98xbwrl";
-      const templateID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_a9bagiw";
-      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "CQ8ikKs9ILlgDBEPm";
+      const serviceID =
+        import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_98xbwrl";
+      const templateID =
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_a9bagiw";
+      const publicKey =
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "CQ8ikKs9ILlgDBEPm";
 
       console.log("EmailJS Config:", { serviceID, templateID, publicKey });
 
@@ -105,7 +108,7 @@ export default function FloatingFeedbackButton() {
     <>
       {/* Floating Feedback Button */}
       <Button
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
+        className="fixed bottom-[7rem] right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
         onClick={() => setShowFeedbackModal(true)}
         aria-label="Send Feedback"
       >
@@ -118,7 +121,8 @@ export default function FloatingFeedbackButton() {
           <AlertDialogHeader>
             <AlertDialogTitle>Share Your Feedback</AlertDialogTitle>
             <AlertDialogDescription>
-              Share your thoughts about YumTrack! Tell us what you love, what could be improved, or suggest new features.
+              Share your thoughts about YumTrack! Tell us what you love, what
+              could be improved, or suggest new features.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -162,7 +166,9 @@ export default function FloatingFeedbackButton() {
                           >
                             <Star
                               className="w-6 h-6"
-                              fill={star <= field.value ? "currentColor" : "none"}
+                              fill={
+                                star <= field.value ? "currentColor" : "none"
+                              }
                             />
                           </button>
                         ))}
