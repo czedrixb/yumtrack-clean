@@ -18,7 +18,7 @@ import {
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
-import { Download, Mail } from "lucide-react";
+import { Download, Mail, Star } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +43,7 @@ const contactSchema = z.object({
 
 const feedbackSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  rating: z.number().min(1, "Please select a rating").max(5, "Rating must be between 1 and 5"),
   message: z.string().min(10, "Feedback must be at least 10 characters"),
 });
 
@@ -72,7 +72,7 @@ export default function Settings() {
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
       name: "",
-      email: "",
+      rating: 0,
       message: "",
     },
   });
@@ -299,15 +299,15 @@ export default function Settings() {
 
       const templateParams = {
         from_name: values.name,
-        from_email: values.email,
+        from_email: "noreply@yumtrack.app",
         to_name: "W Soft Labs Support",
         to_email: "uedu.dev@gmail.com",
-        message: `From: ${values.name} (${values.email})\n\nFeedback:\n${values.message}`,
-        subject: `YumTrack User Feedback from ${values.name}`,
+        message: `From: ${values.name}\nRating: ${values.rating}/5 stars\n\nFeedback:\n${values.message}`,
+        subject: `YumTrack User Feedback from ${values.name} - ${values.rating}/5 stars`,
         app_name: "YumTrack",
         user_name: values.name,
-        user_email: values.email,
-        reply_to: values.email,
+        user_rating: values.rating,
+        reply_to: "noreply@yumtrack.app",
       };
 
       console.log("Sending feedback email with params:", templateParams);
@@ -677,16 +677,35 @@ export default function Settings() {
 
               <FormField
                 control={feedbackForm.control}
-                name="email"
+                name="rating"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Rating</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="your@email.com"
-                        {...field}
-                      />
+                      <div className="flex items-center space-x-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => field.onChange(star)}
+                            className={`p-1 transition-colors ${
+                              star <= field.value
+                                ? "text-yellow-400"
+                                : "text-gray-300 hover:text-yellow-200"
+                            }`}
+                          >
+                            <Star
+                              className="w-6 h-6"
+                              fill={star <= field.value ? "currentColor" : "none"}
+                            />
+                          </button>
+                        ))}
+                        {field.value > 0 && (
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {field.value}/5 stars
+                          </span>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
