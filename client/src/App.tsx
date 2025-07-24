@@ -12,6 +12,7 @@ import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/bottom-navigation";
 import PWAInstallBanner from "@/components/pwa-install-banner";
 import WebViewHelper from "@/components/webview-helper";
+import FloatingFeedbackButton from "@/components/floating-feedback-button";
 import { useRef, useEffect } from "react";
 import { initGA, trackEvent } from "./lib/analytics";
 import { useAnalytics } from "./hooks/use-analytics";
@@ -50,6 +51,7 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <BottomNavigation onHomeClick={handleHomeClick} />
+      <FloatingFeedbackButton />
     </div>
   );
 }

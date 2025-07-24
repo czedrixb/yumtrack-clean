@@ -18,7 +18,7 @@ import {
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
-import { Download, Mail, Star } from "lucide-react";
+import { Download, Mail, Star, MessageCircle } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -549,13 +549,7 @@ export default function Settings() {
             >
               Contact Support
             </Button>
-            <Button
-              variant="link"
-              className="text-sm"
-              onClick={() => setShowFeedbackModal(true)}
-            >
-              User Feedback
-            </Button>
+
           </div>
         </CardContent>
       </Card>
