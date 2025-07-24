@@ -244,10 +244,14 @@ export default function Settings() {
       const templateParams = {
         from_name: values.name,
         from_email: values.email,
+        to_name: "W Soft Labs Support",
         to_email: "uedu.dev@gmail.com",
-        message: values.message,
-        app_name: "YumTrack",
+        message: `From: ${values.name} (${values.email})\n\nMessage:\n${values.message}`,
         subject: `YumTrack Support: Contact from ${values.name}`,
+        app_name: "YumTrack",
+        user_name: values.name,
+        user_email: values.email,
+        reply_to: values.email,
       };
 
       console.log("Sending email with params:", templateParams);
@@ -296,10 +300,14 @@ export default function Settings() {
       const templateParams = {
         from_name: values.name,
         from_email: values.email,
+        to_name: "W Soft Labs Support",
         to_email: "uedu.dev@gmail.com",
-        message: values.message,
-        app_name: "YumTrack",
+        message: `From: ${values.name} (${values.email})\n\nFeedback:\n${values.message}`,
         subject: `YumTrack User Feedback from ${values.name}`,
+        app_name: "YumTrack",
+        user_name: values.name,
+        user_email: values.email,
+        reply_to: values.email,
       };
 
       console.log("Sending feedback email with params:", templateParams);
