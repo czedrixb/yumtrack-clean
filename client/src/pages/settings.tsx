@@ -41,11 +41,19 @@ const contactSchema = z.object({
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
+const feedbackSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  message: z.string().min(10, "Feedback must be at least 10 characters"),
+});
+
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
 
   const { toast } = useToast();
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
@@ -53,6 +61,15 @@ export default function Settings() {
 
   const contactForm = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      message: "",
+    },
+  });
+
+  const feedbackForm = useForm<z.infer<typeof feedbackSchema>>({
+    resolver: zodResolver(feedbackSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -256,6 +273,58 @@ export default function Settings() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const onFeedbackSubmit = async (values: z.infer<typeof feedbackSchema>) => {
+    setIsFeedbackSubmitting(true);
+    try {
+      // EmailJS configuration - same as contact support
+      const serviceID = "service_98xbwrl";
+      const templateID = "template_a9bagiw";
+      const publicKey = "CQ8ikKs9ILlgDBEPm";
+
+      console.log("EmailJS Config:", { serviceID, templateID, publicKey });
+
+      if (!serviceID || !templateID || !publicKey) {
+        throw new Error("EmailJS configuration missing");
+      }
+
+      // Initialize EmailJS with public key
+      emailjs.init(publicKey);
+
+      const templateParams = {
+        from_name: values.name,
+        from_email: values.email,
+        to_email: "uedu.dev@gmail.com",
+        message: values.message,
+        app_name: "YumTrack",
+        subject: `YumTrack User Feedback from ${values.name}`,
+      };
+
+      console.log("Sending feedback email with params:", templateParams);
+
+      const result = await emailjs.send(serviceID, templateID, templateParams);
+      console.log("EmailJS Feedback Success:", result);
+
+      toast({
+        title: "Feedback sent",
+        description:
+          "Thank you for your feedback! Your message has been sent to W Soft Labs.",
+      });
+
+      feedbackForm.reset();
+      setShowFeedbackModal(false);
+    } catch (error) {
+      console.error("EmailJS feedback error:", error);
+      console.error("Error details:", JSON.stringify(error));
+      toast({
+        title: "Error",
+        description: "Failed to send feedback. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFeedbackSubmitting(false);
     }
   };
 
@@ -469,6 +538,13 @@ export default function Settings() {
             >
               Contact Support
             </Button>
+            <Button
+              variant="link"
+              className="text-sm"
+              onClick={() => setShowFeedbackModal(true)}
+            >
+              User Feedback
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -553,6 +629,94 @@ export default function Settings() {
                     <>
                       <Mail className="w-4 h-4 mr-2" />
                       Send Message
+                    </>
+                  )}
+                </Button>
+              </AlertDialogFooter>
+            </form>
+          </Form>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* User Feedback Modal */}
+      <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>User Feedback</AlertDialogTitle>
+            <AlertDialogDescription>
+              Share your thoughts about YumTrack! Tell us what you love, what could be improved, or suggest new features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <Form {...feedbackForm}>
+            <form
+              onSubmit={feedbackForm.handleSubmit(onFeedbackSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={feedbackForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={feedbackForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="your@email.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={feedbackForm.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Feedback</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Share your thoughts, suggestions, or ideas for improvement..."
+                        rows={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>
+                  Cancel
+                </AlertDialogCancel>
+                <Button type="submit" disabled={isFeedbackSubmitting}>
+                  {isFeedbackSubmitting ? (
+                    <>
+                      <Mail className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send Feedback
                     </>
                   )}
                 </Button>
