@@ -16,9 +16,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
-import { Download, Mail, Star, MessageCircle } from "lucide-react";
+import { Download, Mail, Star, MessageCircle, LogOut, User, Mail as MailIcon } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +35,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import emailjs from "@emailjs/browser";
+import { logoutUser } from "@/lib/auth";
+import { auth } from "@/lib/firebase"; 
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -57,10 +61,14 @@ export default function Settings() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false); 
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const { toast } = useToast();
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
   const isMobile = useIsMobile();
+    const [, setLocation] = useLocation();
 
   const contactForm = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
@@ -81,10 +89,15 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    // Load settings from localStorage
     const savedDarkMode = localStorage.getItem("nutrisnap-dark-mode");
-
     if (savedDarkMode !== null) setDarkMode(JSON.parse(savedDarkMode));
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const updateSetting = (key: string, value: boolean) => {
@@ -339,6 +352,37 @@ export default function Settings() {
     }
   };
 
+    const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const result = await logoutUser();
+      
+      if (result.success) {
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out.",
+        });
+        
+        // Redirect to login page
+        setLocation('/login');
+      } else {
+        toast({
+          title: "Logout failed",
+          description: result.error || "Failed to log out. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during logout.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <main className="max-w-sm mx-auto px-4 py-6 space-y-6">
       <header className="text-center space-y-2">
@@ -371,6 +415,91 @@ export default function Settings() {
               }}
             />
           </div>
+        </CardContent>
+      </Card>
+
+{/* Account Settings */}
+<Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {authLoading ? (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground">Loading user information...</p>
+            </div>
+          ) : currentUser ? (
+            <>
+              {/* User Information */}
+              <div className="space-y-3 p-3 bg-muted rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground truncate">
+                      {currentUser.displayName || "User"}
+                    </p>
+                    <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                      <MailIcon className="w-3 h-3" />
+                      <span className="truncate">{currentUser.email}</span>
+                    </div>
+                  </div>
+                </div>
+              
+              </div>
+
+              {/* Logout Button */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    disabled={isLoggingOut}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {isLoggingOut ? "Logging out..." : "Logout"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Logout</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to logout? You will need to sign in again to use YumTrack.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isLoggingOut ? "Logging out..." : "Logout"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          ) : (
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 mx-auto flex items-center justify-center bg-muted rounded-full">
+                <User className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Not Signed In</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sign in to access all features
+                </p>
+              </div>
+              <Button 
+                onClick={() => setLocation('/login')}
+                className="w-full"
+              >
+                Sign In
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

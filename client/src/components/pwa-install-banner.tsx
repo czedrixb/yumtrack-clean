@@ -135,7 +135,7 @@ export default function PWAInstallBanner() {
     setIsVisible(false);
   };
 
-  if (!isVisible || !isMobile) {
+  if (!isVisible) {
     return null;
   }
 

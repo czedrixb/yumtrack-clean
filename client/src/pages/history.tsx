@@ -18,7 +18,7 @@ export default function History() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await apiRequest('DELETE', `/api/food-analyses/${id}`);
     },
     onSuccess: () => {

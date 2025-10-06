@@ -92,7 +92,7 @@ export const trackEvent = (
   label?: string, 
   value?: number
 ) => {
-  console.log('Tracking event:', { action, category, label, value });
+  // console.log('Tracking event:', { action, category, label, value });
   
   if (typeof window === 'undefined' || !window.gtag) {
     console.warn('gtag not available for event tracking');
@@ -101,7 +101,7 @@ export const trackEvent = (
   
   // Check if dataLayer exists to verify GA is properly loaded
   if (window.dataLayer) {
-    console.log('DataLayer length before event:', window.dataLayer.length);
+    // console.log('DataLayer length before event:', window.dataLayer.length);
   }
   
   window.gtag('event', action, {
@@ -114,11 +114,11 @@ export const trackEvent = (
   
   // Check dataLayer after sending event
   if (window.dataLayer) {
-    console.log('DataLayer length after event:', window.dataLayer.length);
-    console.log('Latest dataLayer entry:', window.dataLayer[window.dataLayer.length - 1]);
+    // console.log('DataLayer length after event:', window.dataLayer.length);
+    // console.log('Latest dataLayer entry:', window.dataLayer[window.dataLayer.length - 1]);
   }
   
-  console.log('Event tracked successfully:', action);
+  // console.log('Event tracked successfully:', action);
 };
 
 // Session tracking functions
@@ -164,7 +164,7 @@ const reportSessionDuration = () => {
   // Only report if user was active recently (within 60 seconds)
   if (timeSinceActivity < 60) {
     trackEvent('session_duration', 'engagement', 'active_session', sessionDuration);
-    console.log(`Session duration: ${sessionDuration}s, last activity: ${timeSinceActivity}s ago`);
+    // console.log(`Session duration: ${sessionDuration}s, last activity: ${timeSinceActivity}s ago`);
   }
 };
 

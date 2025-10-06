@@ -11,61 +11,100 @@ import Download from "@/pages/download";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/bottom-navigation";
 import PWAInstallBanner from "@/components/pwa-install-banner";
-import WebViewHelper from "@/components/webview-helper";
 import FloatingFeedbackButton from "@/components/floating-feedback-button";
 import { useRef, useEffect } from "react";
 import { initGA, trackEvent } from "./lib/analytics";
 import { useAnalytics } from "./hooks/use-analytics";
 import { usePWA } from "./hooks/use-pwa";
+import LoginPage from "@/pages/login";
+import { useAuth } from "@/hooks/use-auth";
+import ProtectedRoute from "@/components/protected-route";
+import { useAuthSync } from '@/hooks/useAuthSync';
 
 function Router() {
   const homeRef = useRef<{ goToHome: () => void }>(null);
   const [location, setLocation] = useLocation();
   const { isInWebView } = usePWA();
+  const { user } = useAuth();
   
-  // Track page views when routes change
   useAnalytics();
 
   const handleHomeClick = () => {
-    // If on home page, reset to upload view instead of reloading
     if (location === "/" && homeRef.current) {
       homeRef.current.goToHome();
     } else {
-      // If on other pages, navigate to home normally
       setLocation("/");
     }
   };
 
-  return (
+    useEffect(() => {
+    if (user && location === '/login') {
+      setLocation('/');
+    }
+  }, [user, location, setLocation]);
+
+
+ return (
     <div className="min-h-screen bg-background pb-16">
       <PWAInstallBanner />
-      {/* WebViewHelper removed - PWAInstallBanner now handles webview users directly */}
       <Switch>
-        <Route path="/">
-          <Home ref={homeRef} />
+        <Route path="/login">
+          <LoginPage />
         </Route>
-        <Route path="/history" component={History} />
-        <Route path="/stats" component={Stats} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/download" component={Download} />
+        
+        <Route path="/">
+          <ProtectedRoute>
+            <Home ref={homeRef} />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/history">
+          <ProtectedRoute>
+            <History />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/stats">
+          <ProtectedRoute>
+            <Stats />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/settings">
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/download">
+          <ProtectedRoute>
+            <Download />
+          </ProtectedRoute>
+        </Route>
+        
         <Route component={NotFound} />
       </Switch>
-      <BottomNavigation onHomeClick={handleHomeClick} />
-      <FloatingFeedbackButton />
+      
+      {/* Only show navigation when user is logged in and not on login page */}
+      {user && location !== '/login' && (
+        <>
+          <BottomNavigation onHomeClick={handleHomeClick} />
+          <FloatingFeedbackButton />
+        </>
+      )}
     </div>
   );
 }
 
 function App() {
-  // Initialize Google Analytics when app loads
+  useAuthSync();
+  
   useEffect(() => {
-    // Verify required environment variable is present
     if (!import.meta.env.VITE_GA_MEASUREMENT_ID) {
       console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
     } else {
       initGA();
       
-      // Track initial app load after a short delay to ensure GA is ready
       setTimeout(() => {
         trackEvent('app_load', 'engagement', 'initial_visit');
       }, 1000);

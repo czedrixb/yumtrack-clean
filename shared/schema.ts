@@ -1,44 +1,50 @@
-import { pgTable, text, serial, integer, timestamp, real } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const foodAnalyses = pgTable("food_analyses", {
-  id: serial("id").primaryKey(),
-  foodName: text("food_name").notNull(),
-  imageUrl: text("image_url").notNull(),
-  calories: integer("calories").notNull(),
-  servingSize: text("serving_size").notNull(),
-  confidence: real("confidence").notNull(),
-  protein: real("protein").notNull(),
-  carbohydrates: real("carbohydrates").notNull(),
-  fat: real("fat").notNull(),
-  fiber: real("fiber"),
-  sugar: real("sugar"),
-  sodium: real("sodium"),
-  vitamins: text("vitamins"), // JSON string
-  minerals: text("minerals"), // JSON string
-  healthInsights: text("health_insights"), // JSON string
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+// Firebase-compatible schemas (no Drizzle ORM)
+export const foodAnalysisSchema = z.object({
+  id: z.string().optional(), // Firebase uses string IDs, optional for new documents
+  foodName: z.string().min(1, "Food name is required"),
+  imageUrl: z.string().url("Invalid image URL"),
+  calories: z.number().int().positive("Calories must be positive"),
+  servingSize: z.string().min(1, "Serving size is required"),
+  confidence: z.number().min(0).max(1, "Confidence must be between 0 and 1"),
+  protein: z.number().min(0, "Protein cannot be negative"),
+  carbohydrates: z.number().min(0, "Carbohydrates cannot be negative"),
+  fat: z.number().min(0, "Fat cannot be negative"),
+  fiber: z.number().min(0, "Fiber cannot be negative").nullable().default(null),
+  sugar: z.number().min(0, "Sugar cannot be negative").nullable().default(null),
+  sodium: z.number().min(0, "Sodium cannot be negative").nullable().default(null),
+  vitamins: z.string().nullable().default(null), // JSON string
+  minerals: z.string().nullable().default(null), // JSON string
+  healthInsights: z.string().nullable().default(null), // JSON string
+  createdAt: z.date().default(() => new Date()),
+  userId: z.string().optional(), // Firebase user ID
 });
 
-export const insertFoodAnalysisSchema = createInsertSchema(foodAnalyses).omit({
+export const insertFoodAnalysisSchema = foodAnalysisSchema.omit({
+  id: true,
+  createdAt: true,
+  userId: true,
+});
+
+export const userSchema = z.object({
+  id: z.string().optional(), // Firebase UID
+  email: z.string().email("Invalid email address"),
+  displayName: z.string().min(1, "Display name is required"),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export const insertUserSchema = userSchema.omit({
   id: true,
   createdAt: true,
 });
 
+// Type definitions
+export type FoodAnalysis = z.infer<typeof foodAnalysisSchema>;
 export type InsertFoodAnalysis = z.infer<typeof insertFoodAnalysisSchema>;
-export type FoodAnalysis = typeof foodAnalyses.$inferSelect;
-
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
+export type User = z.infer<typeof userSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+
+// Legacy types for backward compatibility (you can remove these gradually)
+export type FoodAnalysisLegacy = FoodAnalysis & { id: number }; // For components expecting numeric ID
+export type InsertFoodAnalysisLegacy = InsertFoodAnalysis;

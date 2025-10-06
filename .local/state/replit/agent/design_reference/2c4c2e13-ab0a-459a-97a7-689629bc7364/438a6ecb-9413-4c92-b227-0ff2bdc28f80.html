@@ -1,0 +1,464 @@
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriSnap - AI Food Nutrition Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        neutral: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            600: '#64748B',
+                            800: '#1E293B'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/heroicons@2.0.16/24/outline/index.css" rel="stylesheet">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4F46E5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="NutriSnap">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body class="bg-neutral-50 font-sans h-full">
+    <!-- @COMPONENT: PWAInstallBanner -->
+    <div id="pwa-banner" class="hidden fixed top-0 left-0 right-0 bg-primary text-white p-4 z-50 shadow-lg">
+        <div class="flex items-center justify-between max-w-sm mx-auto">
+            <div class="flex items-center space-x-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span class="text-sm font-medium">Install NutriSnap</span>
+            </div>
+            <div class="flex space-x-2">
+                <button data-event="click:installPWA" class="text-xs px-3 py-1 bg-white text-primary rounded-full font-medium">Install</button>
+                <button data-event="click:dismissBanner" class="text-xs px-3 py-1 border border-white/30 rounded-full font-medium">Later</button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: PWAInstallBanner -->
+
+    <!-- @COMPONENT: AppHeader -->
+    <header class="bg-white shadow-sm border-b border-neutral-100 sticky top-0 z-40">
+        <div class="max-w-sm mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-neutral-800">NutriSnap</h1>
+                </div>
+                <button data-event="click:showHistory" class="p-2 rounded-lg hover:bg-neutral-100 transition-colors">
+                    <svg class="w-6 h-6 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: AppHeader -->
+
+    <!-- @COMPONENT: MainContent -->
+    <main class="max-w-sm mx-auto px-4 py-6 pb-24">
+        <!-- @STATE: currentView:'upload'|'analyzing'|'results' = 'upload' -->
+        
+        <!-- Upload Section -->
+        <div id="upload-section" class="space-y-6">
+            <!-- Hero Section -->
+            <div class="text-center space-y-3">
+                <div class="w-20 h-20 bg-gradient-to-br from-primary to-purple-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-neutral-800">Snap Your Food</h2>
+                <p class="text-neutral-600 text-sm leading-relaxed">Take a photo of your meal and get instant nutrition analysis powered by AI</p>
+            </div>
+
+            <!-- Upload Options -->
+            <div class="space-y-4">
+                <!-- Image Preview Area -->
+                <div id="image-preview" class="hidden bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+                    <div class="aspect-square bg-neutral-100">
+                        <img id="preview-image" src="" alt="Food preview" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-4 flex justify-between items-center">
+                        <button data-event="click:retakePhoto" class="text-sm text-neutral-600 font-medium">Retake</button>
+                        <button data-event="click:analyzeImage" class="bg-primary text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:bg-primary/90 transition-colors">
+                            Analyze Food
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upload Buttons -->
+                <div id="upload-buttons" class="space-y-3">
+                    <button data-event="click:openCamera" data-implementation="Should access device camera" class="w-full bg-primary text-white py-4 rounded-2xl font-semibold text-lg shadow-lg hover:bg-primary/90 transition-colors flex items-center justify-center space-x-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span>Take Photo</span>
+                    </button>
+                    
+                    <button data-event="click:openGallery" data-implementation="Should access device photo gallery" class="w-full bg-white text-neutral-800 py-4 rounded-2xl font-semibold text-lg border-2 border-neutral-200 hover:border-primary hover:text-primary transition-colors flex items-center justify-center space-x-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span>Choose from Gallery</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Analysis -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-neutral-800">Recent Analysis</h3>
+                <!-- @MAP: recentAnalyses.map(analysis => ( -->
+                <div data-mock="true" class="bg-white rounded-xl p-4 shadow-sm border border-neutral-200 flex items-center space-x-4">
+                    <!-- A close-up photo of a colorful salad bowl with mixed greens, cherry tomatoes, and avocado -->
+                    <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100" alt="Mixed green salad" class="w-16 h-16 rounded-xl object-cover">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-neutral-800" data-bind="analysis.foodName">Mixed Green Salad</h4>
+                        <p class="text-sm text-neutral-600" data-bind="analysis.calories">245 calories</p>
+                        <p class="text-xs text-neutral-500" data-bind="analysis.timestamp">2 hours ago</p>
+                    </div>
+                    <button data-event="click:viewAnalysis" class="p-2 rounded-lg hover:bg-neutral-100 transition-colors">
+                        <svg class="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <!-- @END_MAP )) -->
+            </div>
+        </div>
+
+        <!-- Analysis Loading Section -->
+        <div id="analyzing-section" class="hidden space-y-6">
+            <div class="text-center space-y-4">
+                <div class="w-20 h-20 bg-gradient-to-br from-accent to-orange-500 rounded-2xl mx-auto flex items-center justify-center animate-pulse">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-neutral-800">Analyzing Your Food</h2>
+                <p class="text-neutral-600 text-sm">Our AI is identifying ingredients and calculating nutrition...</p>
+            </div>
+
+            <!-- Analysis Steps -->
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3 p-4 bg-white rounded-xl border border-neutral-200">
+                    <div class="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-neutral-800">Image processed</span>
+                </div>
+                
+                <div class="flex items-center space-x-3 p-4 bg-white rounded-xl border border-neutral-200">
+                    <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center animate-spin">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-neutral-800">Identifying ingredients...</span>
+                </div>
+
+                <div class="flex items-center space-x-3 p-4 bg-white rounded-xl border border-neutral-200 opacity-50">
+                    <div class="w-8 h-8 bg-neutral-300 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-neutral-500">Calculating nutrition</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="hidden space-y-6">
+            <!-- Food Identification -->
+            <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+                <div class="aspect-square bg-neutral-100">
+                    <!-- A close-up of a grilled chicken breast with vegetables on a white plate -->
+                    <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400" alt="Analyzed food" id="analyzed-image" class="w-full h-full object-cover">
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-neutral-800" data-bind="result.foodName" data-mock="true">Grilled Chicken Breast with Vegetables</h2>
+                        <p class="text-sm text-neutral-600 mt-1" data-bind="result.confidence" data-mock="true">95% confidence match</p>
+                    </div>
+                    
+                    <!-- Calorie Summary -->
+                    <div class="bg-gradient-to-r from-primary to-purple-600 rounded-xl p-6 text-white text-center">
+                        <div class="text-4xl font-bold" data-bind="result.calories" data-mock="true">320</div>
+                        <div class="text-lg font-medium">Total Calories</div>
+                        <div class="text-sm opacity-90 mt-1" data-bind="result.servingSize" data-mock="true">Per serving (150g)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nutrition Breakdown -->
+            <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 space-y-6">
+                <h3 class="text-lg font-semibold text-neutral-800">Nutrition Breakdown</h3>
+                
+                <!-- Macronutrients -->
+                <div class="space-y-4">
+                    <!-- @MAP: macronutrients.map(macro => ( -->
+                    <div data-mock="true" class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-3 h-3 bg-primary rounded-full"></div>
+                            <span class="font-medium text-neutral-800" data-bind="macro.name">Protein</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-neutral-800" data-bind="macro.amount">28g</div>
+                            <div class="text-xs text-neutral-500" data-bind="macro.dailyValue">56% DV</div>
+                        </div>
+                    </div>
+                    
+                    <div data-mock="true" class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-3 h-3 bg-secondary rounded-full"></div>
+                            <span class="font-medium text-neutral-800" data-bind="macro.name">Carbohydrates</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-neutral-800" data-bind="macro.amount">12g</div>
+                            <div class="text-xs text-neutral-500" data-bind="macro.dailyValue">4% DV</div>
+                        </div>
+                    </div>
+
+                    <div data-mock="true" class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-3 h-3 bg-accent rounded-full"></div>
+                            <span class="font-medium text-neutral-800" data-bind="macro.name">Fat</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-neutral-800" data-bind="macro.amount">14g</div>
+                            <div class="text-xs text-neutral-500" data-bind="macro.dailyValue">18% DV</div>
+                        </div>
+                    </div>
+                    <!-- @END_MAP )) -->
+                </div>
+
+                <!-- Vitamins & Minerals -->
+                <div class="border-t border-neutral-100 pt-4">
+                    <h4 class="font-medium text-neutral-800 mb-3">Key Vitamins & Minerals</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- @MAP: vitamins.map(vitamin => ( -->
+                        <div data-mock="true" class="text-center p-3 bg-neutral-50 rounded-lg">
+                            <div class="font-semibold text-neutral-800" data-bind="vitamin.name">Vitamin B6</div>
+                            <div class="text-sm text-neutral-600" data-bind="vitamin.amount">0.8mg</div>
+                            <div class="text-xs text-neutral-500" data-bind="vitamin.dailyValue">47% DV</div>
+                        </div>
+                        
+                        <div data-mock="true" class="text-center p-3 bg-neutral-50 rounded-lg">
+                            <div class="font-semibold text-neutral-800" data-bind="vitamin.name">Niacin</div>
+                            <div class="text-sm text-neutral-600" data-bind="vitamin.amount">12mg</div>
+                            <div class="text-xs text-neutral-500" data-bind="vitamin.dailyValue">75% DV</div>
+                        </div>
+
+                        <div data-mock="true" class="text-center p-3 bg-neutral-50 rounded-lg">
+                            <div class="font-semibold text-neutral-800" data-bind="vitamin.name">Phosphorus</div>
+                            <div class="text-sm text-neutral-600" data-bind="vitamin.amount">220mg</div>
+                            <div class="text-xs text-neutral-500" data-bind="vitamin.dailyValue">18% DV</div>
+                        </div>
+
+                        <div data-mock="true" class="text-center p-3 bg-neutral-50 rounded-lg">
+                            <div class="font-semibold text-neutral-800" data-bind="vitamin.name">Selenium</div>
+                            <div class="text-sm text-neutral-600" data-bind="vitamin.amount">26mcg</div>
+                            <div class="text-xs text-neutral-500" data-bind="vitamin.dailyValue">47% DV</div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Insights -->
+            <div class="bg-gradient-to-r from-secondary to-green-500 rounded-2xl p-6 text-white">
+                <h3 class="text-lg font-semibold mb-3">Health Insights</h3>
+                <div class="space-y-2 text-sm" data-mock="true">
+                    <p data-bind="insights.protein">🏋️ Excellent source of lean protein for muscle building</p>
+                    <p data-bind="insights.vitamins">💪 Rich in B-vitamins for energy metabolism</p>
+                    <p data-bind="insights.minerals">🦴 Good source of phosphorus for bone health</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex space-x-3">
+                <button data-event="click:saveResult" data-implementation="Should save to local storage" class="flex-1 bg-secondary text-white py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 shadow-lg hover:bg-secondary/90 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                    </svg>
+                    <span>Save</span>
+                </button>
+                <button data-event="click:shareResult" data-implementation="Should use Web Share API" class="flex-1 bg-white text-neutral-800 py-3 rounded-xl font-semibold border-2 border-neutral-200 flex items-center justify-center space-x-2 hover:border-primary hover:text-primary transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                    </svg>
+                    <span>Share</span>
+                </button>
+            </div>
+
+            <!-- New Analysis Button -->
+            <button data-event="click:newAnalysis" class="w-full bg-primary text-white py-4 rounded-2xl font-semibold text-lg shadow-lg hover:bg-primary/90 transition-colors">
+                Analyze Another Food
+            </button>
+        </div>
+    </main>
+    <!-- @END_COMPONENT: MainContent -->
+
+    <!-- @COMPONENT: BottomNavigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-30">
+        <div class="max-w-sm mx-auto px-4">
+            <div class="flex items-center justify-around py-2">
+                <button data-event="click:showHome" class="flex flex-col items-center space-y-1 py-2 px-4 text-primary">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                    <span class="text-xs font-medium">Home</span>
+                </button>
+                
+                <button data-event="click:showHistory" class="flex flex-col items-center space-y-1 py-2 px-4 text-neutral-400 hover:text-neutral-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-xs font-medium">History</span>
+                </button>
+                
+                <button data-event="click:showStats" class="flex flex-col items-center space-y-1 py-2 px-4 text-neutral-400 hover:text-neutral-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Stats</span>
+                </button>
+                
+                <button data-event="click:showSettings" class="flex flex-col items-center space-y-1 py-2 px-4 text-neutral-400 hover:text-neutral-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Settings</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: BottomNavigation -->
+
+    <!-- @COMPONENT: ToastNotification -->
+    <div id="toast" class="hidden fixed top-20 left-4 right-4 max-w-sm mx-auto bg-neutral-800 text-white px-4 py-3 rounded-xl shadow-lg z-50">
+        <div class="flex items-center space-x-3">
+            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span class="font-medium" id="toast-message">Result saved successfully!</span>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ToastNotification -->
+
+    <script>
+        // TODO: Implement PWA functionality, camera access, image analysis, and data persistence
+        (function() {
+            // Demo interaction states - not functional business logic
+            let currentView = 'upload';
+            
+            // Simulate view switching for demo
+            function showView(viewName) {
+                document.getElementById('upload-section').classList.toggle('hidden', viewName !== 'upload');
+                document.getElementById('analyzing-section').classList.toggle('hidden', viewName !== 'analyzing');
+                document.getElementById('results-section').classList.toggle('hidden', viewName !== 'results');
+                currentView = viewName;
+            }
+            
+            // Simulate analysis flow for demo
+            function simulateAnalysis() {
+                showView('analyzing');
+                setTimeout(() => {
+                    showView('results');
+                }, 3000);
+            }
+            
+            // Demo toast notification
+            function showToast(message) {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toast-message');
+                toastMessage.textContent = message;
+                toast.classList.remove('hidden');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 3000);
+            }
+            
+            // Demo PWA banner
+            function showPWABanner() {
+                document.getElementById('pwa-banner').classList.remove('hidden');
+            }
+            
+            // Show PWA banner after 3 seconds for demo
+            setTimeout(showPWABanner, 3000);
+            
+            // Add event listeners for demo interactions
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('[data-event]');
+                if (!target) return;
+                
+                const event = target.getAttribute('data-event');
+                
+                switch(event) {
+                    case 'click:openCamera':
+                    case 'click:openGallery':
+                        // Show image preview for demo
+                        document.getElementById('upload-buttons').classList.add('hidden');
+                        document.getElementById('image-preview').classList.remove('hidden');
+                        break;
+                    case 'click:analyzeImage':
+                        simulateAnalysis();
+                        break;
+                    case 'click:retakePhoto':
+                        document.getElementById('upload-buttons').classList.remove('hidden');
+                        document.getElementById('image-preview').classList.add('hidden');
+                        break;
+                    case 'click:saveResult':
+                        showToast('Result saved successfully!');
+                        break;
+                    case 'click:shareResult':
+                        showToast('Sharing nutrition data...');
+                        break;
+                    case 'click:newAnalysis':
+                        showView('upload');
+                        document.getElementById('upload-buttons').classList.remove('hidden');
+                        document.getElementById('image-preview').classList.add('hidden');
+                        break;
+                    case 'click:installPWA':
+                        showToast('App installation started!');
+                        document.getElementById('pwa-banner').classList.add('hidden');
+                        break;
+                    case 'click:dismissBanner':
+                        document.getElementById('pwa-banner').classList.add('hidden');
+                        break;
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

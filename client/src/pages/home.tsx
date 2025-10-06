@@ -3,7 +3,7 @@ import { Camera, Image, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, apiRequestFormData } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import SimpleCamera from "@/components/simple-camera";
 import NutritionResults from "@/components/nutrition-results";
@@ -28,42 +28,37 @@ const Home = forwardRef<HomeRef>((props, ref) => {
     queryKey: ['/api/food-analyses/recent?limit=3'],
   });
 
-  const analysisMutation = useMutation({
-    mutationFn: async (imageData: string) => {
-      const blob = dataURLtoBlob(imageData);
-      const formData = new FormData();
-      formData.append('image', blob, 'food-image.jpg');
-      
-      const response = await fetch('/api/analyze-food', {
-        method: 'POST',
-        body: formData,
-      });
+const analysisMutation = useMutation({
+  mutationFn: async (imageData: string) => {
+    const blob = dataURLtoBlob(imageData);
+    const formData = new FormData();
+    formData.append('image', blob, 'food-image.jpg');
+    
+    const response = await apiRequestFormData('POST', '/api/analyze-food', formData);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to analyze food');
-      }
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to analyze food');
+    }
 
-      return response.json() as Promise<FoodAnalysis>;
-    },
-    onSuccess: (result) => {
-      setAnalysisResult(result);
-      setCurrentView('results');
-      // Track successful food analysis
-      trackEvent('food_analysis_complete', 'engagement', 'success');
-      // Invalidate both queries to update home page data
-      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Analysis failed",
-        description: error.message || "Unable to analyze food. Please try again.",
-        variant: "destructive",
-      });
-      setCurrentView('upload');
-    },
-  });
+    return response.json() as Promise<FoodAnalysis>;
+  },
+  onSuccess: (result) => {
+    setAnalysisResult(result);
+    setCurrentView('results');
+    trackEvent('food_analysis_complete', 'engagement', 'success');
+    queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
+  },
+  onError: (error) => {
+    toast({
+      title: "Analysis failed",
+      description: error.message || "Unable to analyze food. Please try again.",
+      variant: "destructive",
+    });
+    setCurrentView('upload');
+  },
+});
 
   const handleImageSelected = (imageData: string) => {
     setSelectedImage(imageData);

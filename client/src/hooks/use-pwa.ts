@@ -16,43 +16,76 @@ export function usePWA() {
   const [isInWebView, setIsInWebView] = useState(false);
 
   useEffect(() => {
-    // Check if app is already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isInWebApp = (window.navigator as any).standalone === true;
-    const installed = isStandalone || isInWebApp;
-    
-    // Debug logging
-    console.log('PWA Detection:', {
-      isStandalone,
-      isInWebApp,
-      installed,
-      userAgent: navigator.userAgent
-    });
-    
-    setIsInstalled(installed);
+    // Check PWA installation criteria first
+    const checkPWAEligibility = () => {
+      const hasServiceWorker = 'serviceWorker' in navigator;
+      const hasManifest = document.querySelector('link[rel="manifest"]');
+      const isHTTPS = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+      
+      console.log('PWA Eligibility Check:', {
+        hasServiceWorker,
+        hasManifest: !!hasManifest,
+        isHTTPS,
+        userAgent: navigator.userAgent
+      });
+      
+      return hasServiceWorker && hasManifest && isHTTPS;
+    };
 
-    // Detect if running in webview (messenger apps, KakaoTalk, etc.)
+    if (!checkPWAEligibility()) {
+      console.warn('PWA criteria not met - install banner will not show');
+      return;
+    }
+
+    // Check service worker registrations
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        console.log('Service Worker registrations:', registrations.length);
+        registrations.forEach(reg => {
+          console.log('SW scope:', reg.scope);
+        });
+      });
+    }
+
+    const checkInstalled = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isInWebApp = (window.navigator as any).standalone === true;
+      
+      console.log('PWA Installation Status:', {
+        isStandalone,
+        isInWebApp,
+        url: window.location.href
+      });
+      
+      return isStandalone || isInWebApp;
+    };
+
+    setIsInstalled(checkInstalled());
+
+    // Listen for display mode changes
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleDisplayModeChange = (e: MediaQueryListEvent) => {
+      console.log('Display mode changed:', e.matches);
+      setIsInstalled(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleDisplayModeChange);
+
+    // Detect if running in webview
     const detectWebView = () => {
       const userAgent = navigator.userAgent.toLowerCase();
       const isWebView = (
-        // KakaoTalk webview
         userAgent.includes('kakaotalk') ||
-        // Facebook Messenger
         userAgent.includes('fban') || userAgent.includes('fbav') ||
-        // Instagram
         userAgent.includes('instagram') ||
-        // Line browser
         userAgent.includes('line') ||
-        // WeChat
         userAgent.includes('micromessenger') ||
-        // Generic webview indicators
         userAgent.includes('wv') ||
-        // Android WebView
         (userAgent.includes('android') && userAgent.includes('version') && !userAgent.includes('chrome')) ||
-        // iOS WebView (not Safari)
-        (userAgent.includes('iphone') || userAgent.includes('ipad')) && !userAgent.includes('safari')
+        ((userAgent.includes('iphone') || userAgent.includes('ipad')) && !userAgent.includes('safari'))
       );
       
+      console.log('WebView Detection:', { isWebView, userAgent });
       return isWebView;
     };
 
@@ -60,25 +93,32 @@ export function usePWA() {
 
     // Check if there's already a global prompt stored
     if ((window as any).deferredPrompt) {
+      console.log('Found existing deferred prompt');
       setDeferredPrompt((window as any).deferredPrompt);
       setCanInstall(true);
     }
 
-    // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const event = e as BeforeInstallPromptEvent;
+      console.log('📱 PWA Install Prompt Available!', {
+        platforms: event.platforms
+      });
+      
       setDeferredPrompt(event);
       setCanInstall(true);
       // Store globally as backup
       (window as any).deferredPrompt = event;
     };
 
-    // Listen for app installed event
     const handleAppInstalled = () => {
+      console.log('🎉 App was installed!');
       setIsInstalled(true);
       setCanInstall(false);
       setDeferredPrompt(null);
+      // Clear the global prompt
+      (window as any).deferredPrompt = null;
+      localStorage.setItem('yumtrack-installed-dismissed', 'true');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -87,20 +127,32 @@ export function usePWA() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      mediaQuery.removeEventListener('change', handleDisplayModeChange);
     };
   }, []);
 
   const install = async (): Promise<boolean> => {
-    if (!deferredPrompt) return false;
+    if (!deferredPrompt) {
+      console.log('No deferred prompt available for installation');
+      return false;
+    }
 
     try {
+      console.log('Prompting user for installation...');
       await deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
       
+      console.log('User choice:', choice.outcome);
+      
       if (choice.outcome === 'accepted') {
+        console.log('User accepted PWA installation');
         setDeferredPrompt(null);
         setCanInstall(false);
+        // Clear the global prompt
+        (window as any).deferredPrompt = null;
         return true;
+      } else {
+        console.log('User dismissed PWA installation');
       }
     } catch (error) {
       console.error('Error installing PWA:', error);
@@ -110,7 +162,7 @@ export function usePWA() {
   };
 
   return {
-    canInstall: canInstall && !isInstalled,
+    canInstall,
     isInstalled,
     isInWebView,
     install,
