@@ -5,11 +5,11 @@ import { analyzeFoodImage } from "./services/openai";
 import multer from "multer";
 import { auth } from "./lib/firebase.js";
 
-// Define authenticated request interface
+// Define authenticated request interface that matches Firebase DecodedIdToken
 interface AuthenticatedRequest extends Request {
   user?: {
     uid: string;
-    email: string | null;
+    email?: string | null; // Firebase uses optional email
     [key: string]: any;
   };
 }
@@ -47,6 +47,7 @@ const authenticateFirebaseUser = async (req: AuthenticatedRequest, res: Response
     const decodedToken = await auth.verifyIdToken(token);
     console.log('✅ Token verified for user:', decodedToken.uid);
     
+    // Assign the decoded token directly - it already has the shape we need
     req.user = decodedToken;
     next();
   } catch (error: any) {
