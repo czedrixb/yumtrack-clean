@@ -6,7 +6,7 @@ dotenv.config();
 
 export const config = {
   // Server configuration
-  port: process.env.PORT || 5000,
+  port: process.env.PORT || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
 
   firebase: {
