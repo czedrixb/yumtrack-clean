@@ -1,9 +1,18 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { createFirebaseStorage } from "./lib/firebase-storage.js"; // This should be SERVER-SIDE
+import { createFirebaseStorage } from "./lib/firebase-storage.js";
 import { analyzeFoodImage } from "./services/openai";
 import multer from "multer";
 import { auth } from "./lib/firebase.js";
+
+// Define authenticated request interface
+interface AuthenticatedRequest extends Request {
+  user?: {
+    uid: string;
+    email: string | null;
+    [key: string]: any;
+  };
+}
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -20,8 +29,8 @@ const upload = multer({
   },
 });
 
-// Firebase authentication middleware - ADD DEBUG LOGGING
-const authenticateFirebaseUser = async (req: any, res: any, next: any) => {
+// Firebase authentication middleware
+const authenticateFirebaseUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     console.log('🔐 Auth header present:', !!authHeader);
@@ -49,13 +58,13 @@ const authenticateFirebaseUser = async (req: any, res: any, next: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Analyze food image (protected route)
-  app.post("/api/analyze-food", authenticateFirebaseUser, upload.single('image'), async (req, res) => {
+  app.post("/api/analyze-food", authenticateFirebaseUser, upload.single('image'), async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No image file provided" });
       }
 
-      console.log('📸 Processing image for user:', req.user.uid);
+      console.log('📸 Processing image for user:', req.user!.uid);
       
       // Convert image to base64
       const base64Image = req.file.buffer.toString('base64');
@@ -66,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('✅ Analysis complete:', analysis.foodName);
       
       // Create storage instance with user's UID
-      const userStorage = createFirebaseStorage(req.user.uid);
+      const userStorage = createFirebaseStorage(req.user!.uid);
 
       // Validate and prepare data for Firebase
       const analysisData = {
@@ -102,10 +111,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all food analyses (protected route)
-  app.get("/api/food-analyses", authenticateFirebaseUser, async (req, res) => {
+  app.get("/api/food-analyses", authenticateFirebaseUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      console.log('📋 Fetching all analyses for user:', req.user.uid);
-      const userStorage = createFirebaseStorage(req.user.uid);
+      console.log('📋 Fetching all analyses for user:', req.user!.uid);
+      const userStorage = createFirebaseStorage(req.user!.uid);
       const analyses = await userStorage.getAllFoodAnalyses();
       console.log('✅ Found', analyses.length, 'analyses');
       res.json(analyses);
@@ -116,11 +125,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get recent food analyses (protected route)
-  app.get("/api/food-analyses/recent", authenticateFirebaseUser, async (req, res) => {
+  app.get("/api/food-analyses/recent", authenticateFirebaseUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const limit = parseInt(req.query.limit as string) || 5;
-      console.log('📋 Fetching recent analyses for user:', req.user.uid, 'limit:', limit);
-      const userStorage = createFirebaseStorage(req.user.uid);
+      console.log('📋 Fetching recent analyses for user:', req.user!.uid, 'limit:', limit);
+      const userStorage = createFirebaseStorage(req.user!.uid);
       const analyses = await userStorage.getRecentFoodAnalyses(limit);
       console.log('✅ Found', analyses.length, 'recent analyses');
       res.json(analyses);
@@ -131,11 +140,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get specific food analysis (protected route)
-  app.get("/api/food-analyses/:id", authenticateFirebaseUser, async (req, res) => {
+  app.get("/api/food-analyses/:id", authenticateFirebaseUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = req.params.id;
-      console.log('📋 Fetching analysis:', id, 'for user:', req.user.uid);
-      const userStorage = createFirebaseStorage(req.user.uid);
+      console.log('📋 Fetching analysis:', id, 'for user:', req.user!.uid);
+      const userStorage = createFirebaseStorage(req.user!.uid);
       const analysis = await userStorage.getFoodAnalysis(id);
       
       if (!analysis) {
@@ -152,11 +161,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete food analysis (protected route)
-  app.delete("/api/food-analyses/:id", authenticateFirebaseUser, async (req, res) => {
+  app.delete("/api/food-analyses/:id", authenticateFirebaseUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = req.params.id;
-      console.log('🗑️ Deleting analysis:', id, 'for user:', req.user.uid);
-      const userStorage = createFirebaseStorage(req.user.uid);
+      console.log('🗑️ Deleting analysis:', id, 'for user:', req.user!.uid);
+      const userStorage = createFirebaseStorage(req.user!.uid);
       const deleted = await userStorage.deleteFoodAnalysis(id);
       
       if (!deleted) {
@@ -173,12 +182,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Clear all food analyses (protected route)
-  app.delete("/api/food-analyses", authenticateFirebaseUser, async (req, res) => {
+  app.delete("/api/food-analyses", authenticateFirebaseUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      console.log('🗑️ Clearing all analyses for user:', req.user.uid);
-      const userStorage = createFirebaseStorage(req.user.uid);
+      console.log('🗑️ Clearing all analyses for user:', req.user!.uid);
+      const userStorage = createFirebaseStorage(req.user!.uid);
       await userStorage.clearAllAnalyses();
-      console.log('✅ All analyses cleared for user:', req.user.uid);
+      console.log('✅ All analyses cleared for user:', req.user!.uid);
       res.json({ success: true });
     } catch (error) {
       console.error("❌ Error clearing all food analyses:", error);

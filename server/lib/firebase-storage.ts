@@ -141,7 +141,7 @@ export class FirebaseStorage {
       });
     } catch (error) {
       console.error('❌ Error getting recent food analyses:', error);
-      console.error('Error details:', error.message);
+      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }
