@@ -76,10 +76,13 @@ const initApp = async () => {
   return app;
 };
 
-// Export for Vercel serverless
-export default initApp();
+// Export for Vercel serverless - but don't call it immediately
+export default initApp;
 
-// Local development
+// For local development, call initApp only if not in Vercel environment
 if (!process.env.VERCEL) {
-  initApp();
+  initApp().catch((error) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
 }
