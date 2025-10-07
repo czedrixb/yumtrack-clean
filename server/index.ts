@@ -41,8 +41,8 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  // Validate environment configuration
+// Initialize the app
+const initApp = async () => {
   validateConfig();
   
   const server = await registerRoutes(app);
@@ -55,18 +55,31 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  // For Vercel, we need to handle both serverless and static serving
+  if (process.env.VERCEL) {
+    // In Vercel, serve static files from built client
     serveStatic(app);
+  } else {
+    // Local development
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    const port = config.port;
+    server.listen(port, () => {
+      log(`serving on port ${port}`);
+    });
   }
 
-  // Use simplified listen options for Windows compatibility
-  const port = config.port;
-  server.listen(port, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+  return app;
+};
+
+// Export for Vercel serverless
+export default initApp();
+
+// Local development
+if (!process.env.VERCEL) {
+  initApp();
+}
