@@ -55,10 +55,11 @@ const initApp = async () => {
     throw err;
   });
 
-  // For Vercel, we need to handle both serverless and static serving
+  // For Vercel - no server.listen(), just setup
   if (process.env.VERCEL) {
-    // In Vercel, serve static files from built client
     serveStatic(app);
+    // Return just the app for serverless
+    return { app, server };
   } else {
     // Local development
     if (app.get("env") === "development") {
@@ -71,15 +72,26 @@ const initApp = async () => {
     server.listen(port, () => {
       log(`serving on port ${port}`);
     });
+    
+    return { app, server };
   }
-
-  return app;
 };
 
-// Export for Vercel serverless - but don't call it immediately
-export default initApp;
+// Vercel serverless handler
+let appInstance: express.Application | null = null;
 
-// For local development, call initApp only if not in Vercel environment
+// This is the handler Vercel will use
+const handler = async (req: Request, res: Response) => {
+  if (!appInstance) {
+    const { app } = await initApp();
+    appInstance = app;
+  }
+  return appInstance(req, res);
+};
+
+export default handler;
+
+// Local development - only run if not in Vercel
 if (!process.env.VERCEL) {
   initApp().catch((error) => {
     console.error('Failed to start server:', error);
