@@ -26,7 +26,6 @@ export class FirebaseStorage {
     try {
       console.log('💾 Starting to create food analysis for user:', this.userId);
       
-      // Upload image to Firebase Storage if it's a data URL
       let imageUrl = insertAnalysis.imageUrl;
       
       if (insertAnalysis.imageUrl.startsWith('data:')) {
@@ -36,7 +35,6 @@ export class FirebaseStorage {
           const filename = `food-images/${this.userId}/${Date.now()}.jpg`;
           const file = bucket.file(filename);
           
-          // Convert data URL to buffer
           const base64Data = insertAnalysis.imageUrl.replace(/^data:image\/\w+;base64,/, '');
           const buffer = Buffer.from(base64Data, 'base64');
           
@@ -46,13 +44,11 @@ export class FirebaseStorage {
             },
           });
           
-          // Make the file publicly accessible
           await file.makePublic();
           imageUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
           console.log('✅ Image uploaded to:', imageUrl);
         } catch (storageError) {
           console.error('❌ Error uploading image to storage:', storageError);
-          // Continue with data URL if storage fails
           console.log('⚠️ Using data URL instead of storage URL');
         }
       }
@@ -141,7 +137,7 @@ export class FirebaseStorage {
       });
     } catch (error) {
       console.error('❌ Error getting recent food analyses:', error);
-      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error details:', error.message);
       throw error;
     }
   }

@@ -41,8 +41,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize the app
-const initApp = async () => {
+(async () => {
+  // Validate environment configuration
   validateConfig();
   
   const server = await registerRoutes(app);
@@ -55,46 +55,18 @@ const initApp = async () => {
     throw err;
   });
 
-  // For Vercel - no server.listen(), just setup
-  if (process.env.VERCEL) {
-    serveStatic(app);
-    // Return just the app for serverless
-    return { app, server };
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
   } else {
-    // Local development
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
-
-    const port = config.port;
-    server.listen(port, () => {
-      log(`serving on port ${port}`);
-    });
-    
-    return { app, server };
+    serveStatic(app);
   }
-};
 
-// Vercel serverless handler
-let appInstance: express.Application | null = null;
-
-// This is the handler Vercel will use
-const handler = async (req: Request, res: Response) => {
-  if (!appInstance) {
-    const { app } = await initApp();
-    appInstance = app;
-  }
-  return appInstance(req, res);
-};
-
-export default handler;
-
-// Local development - only run if not in Vercel
-if (!process.env.VERCEL) {
-  initApp().catch((error) => {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+  // Use simplified listen options for Windows compatibility
+  const port = config.port;
+  server.listen(port, () => {
+    log(`serving on port ${port}`);
   });
-}
+})();
