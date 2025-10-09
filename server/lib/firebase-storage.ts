@@ -18,7 +18,7 @@ export class FirebaseStorage {
       return collection;
     } catch (error) {
       console.error('❌ Error creating collection reference:', error);
-      throw error;
+      throw new Error('Database not available');
     }
   }
 
@@ -28,9 +28,9 @@ export class FirebaseStorage {
       
       let imageUrl = insertAnalysis.imageUrl;
       
-      if (insertAnalysis.imageUrl.startsWith('data:')) {
-        console.log('📸 Uploading image to Firebase Storage...');
+      if (insertAnalysis.imageUrl.startsWith('data:') && storage) {
         try {
+          console.log('📸 Uploading image to Firebase Storage...');
           const bucket = storage.bucket();
           const filename = `food-images/${this.userId}/${Date.now()}.jpg`;
           const file = bucket.file(filename);
@@ -70,6 +70,9 @@ export class FirebaseStorage {
       };
     } catch (error) {
       console.error('❌ Error creating food analysis:', error);
+      if (error.code === 16 || error.message.includes('UNAUTHENTICATED')) {
+        throw new Error('Firebase authentication failed. Please check service account configuration.');
+      }
       throw error;
     }
   }
@@ -93,6 +96,9 @@ export class FirebaseStorage {
       return undefined;
     } catch (error) {
       console.error('❌ Error getting food analysis:', error);
+      if (error.code === 16 || error.message.includes('UNAUTHENTICATED')) {
+        throw new Error('Firebase authentication failed. Please check service account configuration.');
+      }
       throw error;
     }
   }
@@ -113,6 +119,9 @@ export class FirebaseStorage {
       });
     } catch (error) {
       console.error('❌ Error getting all food analyses:', error);
+      if (error.code === 16 || error.message.includes('UNAUTHENTICATED')) {
+        throw new Error('Firebase authentication failed. Please check service account configuration.');
+      }
       throw error;
     }
   }
@@ -137,8 +146,15 @@ export class FirebaseStorage {
       });
     } catch (error) {
       console.error('❌ Error getting recent food analyses:', error);
+      console.error('Error code:', error.code);
       console.error('Error details:', error.message);
-      throw error;
+      
+      if (error.code === 16 || error.message.includes('UNAUTHENTICATED')) {
+        throw new Error('Firebase authentication failed. Please check service account configuration.');
+      }
+      
+      console.log('⚠️ Returning empty array due to error');
+      return [];
     }
   }
 
@@ -151,6 +167,9 @@ export class FirebaseStorage {
       return true;
     } catch (error) {
       console.error('❌ Error deleting food analysis:', error);
+      if (error.code === 16 || error.message.includes('UNAUTHENTICATED')) {
+        throw new Error('Firebase authentication failed. Please check service account configuration.');
+      }
       throw error;
     }
   }
@@ -170,10 +189,12 @@ export class FirebaseStorage {
       return true;
     } catch (error) {
       console.error('❌ Error clearing all analyses:', error);
+      if (error.code === 16 || error.message.includes('UNAUTHENTICATED')) {
+        throw new Error('Firebase authentication failed. Please check service account configuration.');
+      }
       throw error;
     }
   }
 }
 
-// Factory function to create storage instance with user ID
 export const createFirebaseStorage = (userId: string) => new FirebaseStorage(userId);
