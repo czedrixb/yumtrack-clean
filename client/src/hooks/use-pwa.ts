@@ -16,7 +16,6 @@ export function usePWA() {
   const [isInWebView, setIsInWebView] = useState(false);
 
   useEffect(() => {
-    // Check PWA installation criteria first
     const checkPWAEligibility = () => {
       const hasServiceWorker = 'serviceWorker' in navigator;
       const hasManifest = document.querySelector('link[rel="manifest"]');
@@ -37,7 +36,6 @@ export function usePWA() {
       return;
     }
 
-    // Check service worker registrations
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(registrations => {
         console.log('Service Worker registrations:', registrations.length);
@@ -62,7 +60,6 @@ export function usePWA() {
 
     setIsInstalled(checkInstalled());
 
-    // Listen for display mode changes
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const handleDisplayModeChange = (e: MediaQueryListEvent) => {
       console.log('Display mode changed:', e.matches);
@@ -71,7 +68,6 @@ export function usePWA() {
     
     mediaQuery.addEventListener('change', handleDisplayModeChange);
 
-    // Detect if running in webview
     const detectWebView = () => {
       const userAgent = navigator.userAgent.toLowerCase();
       const isWebView = (
@@ -91,7 +87,6 @@ export function usePWA() {
 
     setIsInWebView(detectWebView());
 
-    // Check if there's already a global prompt stored
     if ((window as any).deferredPrompt) {
       console.log('Found existing deferred prompt');
       setDeferredPrompt((window as any).deferredPrompt);
@@ -107,7 +102,6 @@ export function usePWA() {
       
       setDeferredPrompt(event);
       setCanInstall(true);
-      // Store globally as backup
       (window as any).deferredPrompt = event;
     };
 
@@ -116,7 +110,6 @@ export function usePWA() {
       setIsInstalled(true);
       setCanInstall(false);
       setDeferredPrompt(null);
-      // Clear the global prompt
       (window as any).deferredPrompt = null;
       localStorage.setItem('yumtrack-installed-dismissed', 'true');
     };
@@ -148,7 +141,6 @@ export function usePWA() {
         console.log('User accepted PWA installation');
         setDeferredPrompt(null);
         setCanInstall(false);
-        // Clear the global prompt
         (window as any).deferredPrompt = null;
         return true;
       } else {

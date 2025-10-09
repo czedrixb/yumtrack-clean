@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-
 import { Download, CheckCircle } from "lucide-react";
 import { usePWA } from "@/hooks/use-pwa";
 import { trackEvent } from "@/lib/analytics";
@@ -12,65 +11,59 @@ export default function PWAInstallBanner() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Show banner if app can be installed and user hasn't dismissed it
+    if (!isMobile) {
+      setIsVisible(false);
+      return;
+    }
+
     const dismissed = localStorage.getItem('yumtrack-install-dismissed');
     const installedDismissed = localStorage.getItem('yumtrack-installed-dismissed');
     
-    // Show banner if app is not installed and not dismissed, OR if app is installed but user hasn't dismissed the installed message
     if ((!isInstalled && !dismissed) || (isInstalled && !installedDismissed)) {
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
     } else {
       setIsVisible(false);
     }
-  }, [canInstall, isInstalled]);
+  }, [canInstall, isInstalled, isMobile]); 
 
-  // Auto-dismiss the "App Installed" message after 5 seconds
   useEffect(() => {
-    if (isVisible && isInstalled) {
+    if (isVisible && isInstalled && isMobile) {
       const autoDismissTimer = setTimeout(() => {
         localStorage.setItem('yumtrack-installed-dismissed', 'true');
         setIsVisible(false);
       }, 5000);
       return () => clearTimeout(autoDismissTimer);
     }
-  }, [isVisible, isInstalled]);
+  }, [isVisible, isInstalled, isMobile]); 
 
   const handleInstall = async () => {
     trackEvent('pwa_install_attempt', 'engagement', 'banner_click');
     
-    // First check if app is already installed
     if (isInstalled) {
       trackEvent('pwa_already_installed', 'engagement', 'banner_click');
-      // Mark as dismissed since they clicked on it while it was already installed
       localStorage.setItem('yumtrack-installed-dismissed', 'true');
       setIsVisible(false);
       return;
     }
     
-    // If in webview (messenger/kakaotalk), open in browser directly
     if (isInWebView) {
       const currentUrl = window.location.href;
       const userAgent = navigator.userAgent.toLowerCase();
       
       trackEvent('webview_browser_redirect', 'engagement', 'install_redirect');
       
-      // Try multiple methods to open in browser
       let opened = false;
       
       if (userAgent.includes('kakaotalk')) {
-        // KakaoTalk specific methods
         try {
-          // Method 1: KakaoTalk external browser
           window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
           opened = true;
         } catch (e) {
           console.log('KakaoTalk method 1 failed, trying fallback');
         }
       } else if (userAgent.includes('messenger') || userAgent.includes('fban') || userAgent.includes('fbav')) {
-        // Facebook Messenger methods
         try {
-          // Method 1: Android intent
           if (userAgent.includes('android')) {
             window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`;
             opened = true;
@@ -80,10 +73,8 @@ export default function PWAInstallBanner() {
         }
       }
       
-      // Universal fallback methods
       if (!opened) {
         try {
-          // Method 2: Try to open in new window/tab
           const newWindow = window.open(currentUrl, '_blank');
           if (newWindow) {
             opened = true;
@@ -93,7 +84,6 @@ export default function PWAInstallBanner() {
         }
       }
       
-      // Last resort: direct location change
       if (!opened) {
         window.location.href = currentUrl;
       }
@@ -101,7 +91,6 @@ export default function PWAInstallBanner() {
       return;
     }
     
-    // For regular browsers, attempt PWA installation
     if (canInstall && install) {
       try {
         const installed = await install();
@@ -116,13 +105,10 @@ export default function PWAInstallBanner() {
         trackEvent('pwa_install_failed', 'engagement', 'automatic_install');
       }
     } else {
-      // If PWA install isn't available, hide the banner
       setIsVisible(false);
       trackEvent('pwa_install_unavailable', 'engagement', 'banner_attempt');
     }
   };
-
-
 
   const handleDismiss = () => {
     if (isInstalled) {
@@ -135,23 +121,34 @@ export default function PWAInstallBanner() {
     setIsVisible(false);
   };
 
-  if (!isVisible) {
+  const handleAppInfoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleInstall();
+  };
+
+  if (!isMobile || !isVisible) {
     return null;
   }
 
   return (
     <>
-      <div className={`fixed top-0 left-0 right-0 p-4 z-50 shadow-lg animate-in slide-in-from-top ${
-        isInstalled ? 'bg-green-600 text-white' : 'bg-primary text-primary-foreground'
-      }`}>
+      <div 
+        className={`fixed top-0 left-0 right-0 p-4 z-50 shadow-lg animate-in slide-in-from-top ${
+          isInstalled ? 'bg-green-600 text-white' : 'bg-primary text-primary-foreground'
+        }`}
+        onClick={!isInstalled ? handleInstall : undefined}
+      >
         <div className="flex items-center justify-between max-w-sm mx-auto">
-          <div className="flex items-center space-x-3">
+          <div 
+            className="flex items-center space-x-3 flex-1 cursor-pointer"
+            onClick={handleAppInfoClick}
+          >
             {isInstalled ? (
               <CheckCircle className="w-6 h-6" />
             ) : (
               <Download className="w-6 h-6" />
             )}
-            <div>
+            <div className="flex-1">
               <div className="text-sm font-medium">
                 {isInstalled ? 'App Installed' : 'Get the App'}
               </div>
@@ -162,7 +159,10 @@ export default function PWAInstallBanner() {
               )}
             </div>
           </div>
-          <div className="flex space-x-2">
+          <div 
+            className="flex space-x-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             {isInstalled ? (
               <Button
                 size="sm"
