@@ -1,9 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { createFirebaseStorage } from "./lib/firebase-storage.js"; // This should be SERVER-SIDE
+import { createFirebaseStorage } from "./lib/firebase-storage.js";
 import { analyzeFoodImage } from "./services/openai";
 import multer from "multer";
-import { auth } from "./lib/firebase.js";
+import { getAuth } from "./lib/firebase.js"; // Change this import
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -20,7 +20,7 @@ const upload = multer({
   },
 });
 
-// Firebase authentication middleware - ADD DEBUG LOGGING
+// Firebase authentication middleware - UPDATED
 const authenticateFirebaseUser = async (req: any, res: any, next: any) => {
   try {
     const authHeader = req.headers.authorization;
@@ -35,6 +35,7 @@ const authenticateFirebaseUser = async (req: any, res: any, next: any) => {
     console.log('🔑 Token length:', token.length);
     
     console.log('🔄 Verifying token...');
+    const auth = getAuth(); // Use getAuth() instead of direct auth instance
     const decodedToken = await auth.verifyIdToken(token);
     console.log('✅ Token verified for user:', decodedToken.uid);
     
@@ -48,7 +49,6 @@ const authenticateFirebaseUser = async (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Analyze food image (protected route)
   app.post("/api/analyze-food", authenticateFirebaseUser, upload.single('image'), async (req, res) => {
     try {
       if (!req.file) {

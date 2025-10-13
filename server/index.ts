@@ -1,7 +1,14 @@
+// Load environment variables FIRST, before any other imports
 import dotenv from 'dotenv';
-// Load environment variables first
 dotenv.config();
 
+// Add debug logging immediately after loading env
+console.log('🔧 Environment variables loaded:');
+console.log('FIREBASE_SERVICE_ACCOUNT present:', !!process.env.FIREBASE_SERVICE_ACCOUNT);
+console.log('FIREBASE_PROJECT_ID present:', !!process.env.FIREBASE_PROJECT_ID);
+console.log('FIREBASE_CLIENT_EMAIL present:', !!process.env.FIREBASE_CLIENT_EMAIL);
+
+// Now import other dependencies
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";

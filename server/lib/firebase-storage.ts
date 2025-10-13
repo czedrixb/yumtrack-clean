@@ -1,5 +1,5 @@
 // server/lib/firebase-storage.ts
-import { db, storage } from './firebase.js';
+import { getFirestore, getStorage } from './firebase.js';
 import type { FoodAnalysis, InsertFoodAnalysis } from "@shared/schema";
 
 export class FirebaseStorage {
@@ -12,6 +12,7 @@ export class FirebaseStorage {
 
   private foodAnalysesCollection() {
     try {
+      const db = getFirestore();
       const userDoc = db.collection('users').doc(this.userId);
       const collection = userDoc.collection('foodAnalyses');
       console.log('📁 Collection path: users/', this.userId, '/foodAnalyses');
@@ -23,6 +24,8 @@ export class FirebaseStorage {
   }
 
   async createFoodAnalysis(insertAnalysis: InsertFoodAnalysis): Promise<FoodAnalysis> {
+    const storage = getStorage();
+    
     try {
       console.log('💾 Starting to create food analysis for user:', this.userId);
       
@@ -177,6 +180,7 @@ export class FirebaseStorage {
   async clearAllAnalyses(): Promise<boolean> {
     try {
       console.log('🗑️ Clearing all analyses for user:', this.userId);
+      const db = getFirestore();
       const snapshot = await this.foodAnalysesCollection().get();
       const batch = db.batch();
       
