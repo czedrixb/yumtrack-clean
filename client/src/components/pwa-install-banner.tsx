@@ -49,74 +49,35 @@ export default function PWAInstallBanner() {
       return;
     }
 
+    // 🚫 Skip showing iOS instructions
     if (isIOS) {
-      trackEvent('ios_install_instructions_shown', 'engagement', 'banner_click');
-      setShowIOSInstructions(true);
+      console.log('iOS installation is manual. Skipping instructions.');
+      setIsVisible(false);
       return;
     }
 
-    if (isInWebView) {
-      const currentUrl = window.location.href;
-      const userAgent = navigator.userAgent.toLowerCase();
-
-      trackEvent('webview_browser_redirect', 'engagement', 'install_redirect');
-
-      let opened = false;
-
-      if (userAgent.includes('kakaotalk')) {
-        try {
-          window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
-          opened = true;
-        } catch (e) {
-          console.log('KakaoTalk method 1 failed, trying fallback');
-        }
-      } else if (userAgent.includes('messenger') || userAgent.includes('fban') || userAgent.includes('fbav')) {
-        try {
-          if (userAgent.includes('android')) {
-            window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`;
-            opened = true;
-          }
-        } catch (e) {
-          console.log('Messenger method 1 failed, trying fallback');
-        }
-      }
-
-      if (!opened) {
-        try {
-          const newWindow = window.open(currentUrl, '_blank');
-          if (newWindow) {
-            opened = true;
-          }
-        } catch (e) {
-          console.log('Window.open failed, trying location change');
-        }
-      }
-
-      if (!opened) {
-        window.location.href = currentUrl;
-      }
-
-      return;
-    }
-
+    // ✅ Trigger Chrome/Android install prompt directly
     if (canInstall && install) {
       try {
         const installed = await install();
         if (installed) {
           trackEvent('pwa_install_success', 'engagement', 'automatic_install');
-          setIsVisible(false);
           localStorage.setItem('yumtrack-install-dismissed', 'true');
-          return;
+          setIsVisible(false);
+        } else {
+          console.log('User dismissed install prompt.');
         }
       } catch (error) {
         console.error('Installation failed:', error);
         trackEvent('pwa_install_failed', 'engagement', 'automatic_install');
       }
     } else {
-      setIsVisible(false);
+      console.log('PWA install not available.');
       trackEvent('pwa_install_unavailable', 'engagement', 'banner_attempt');
+      setIsVisible(false);
     }
   };
+
 
 
   const handleDismiss = () => {
