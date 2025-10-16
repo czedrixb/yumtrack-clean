@@ -14,6 +14,8 @@ export function usePWA() {
   const [canInstall, setCanInstall] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInWebView, setIsInWebView] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
 
   useEffect(() => {
     const checkPWAEligibility = () => {
@@ -31,9 +33,24 @@ export function usePWA() {
       return hasServiceWorker && hasManifest && isHTTPS;
     };
 
+    // Detect iOS and Safari
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    const isSafariBrowser = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+    
+    setIsIOS(isIOSDevice);
+    setIsSafari(isSafariBrowser);
+
+    console.log('Browser Detection:', { isIOS: isIOSDevice, isSafari: isSafariBrowser });
+
     if (!checkPWAEligibility()) {
       console.warn('PWA criteria not met - install banner will not show');
       return;
+    }
+
+    // For iOS Safari, we can always "install" by showing instructions
+    if (isIOSDevice) {
+      setCanInstall(true);
     }
 
     if ('serviceWorker' in navigator) {
@@ -69,7 +86,6 @@ export function usePWA() {
     mediaQuery.addEventListener('change', handleDisplayModeChange);
 
     const detectWebView = () => {
-      const userAgent = navigator.userAgent.toLowerCase();
       const isWebView = (
         userAgent.includes('kakaotalk') ||
         userAgent.includes('fban') || userAgent.includes('fbav') ||
@@ -125,6 +141,13 @@ export function usePWA() {
   }, []);
 
   const install = async (): Promise<boolean> => {
+    // For iOS Safari, show installation instructions
+    if (isIOS) {
+      console.log('Showing iOS installation instructions');
+      // This will trigger the iOS instructions in your component
+      return true;
+    }
+
     if (!deferredPrompt) {
       console.log('No deferred prompt available for installation');
       return false;
@@ -157,6 +180,8 @@ export function usePWA() {
     canInstall,
     isInstalled,
     isInWebView,
+    isIOS,
+    isSafari,
     install,
   };
 }

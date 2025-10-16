@@ -4,10 +4,12 @@ import { Download, CheckCircle } from "lucide-react";
 import { usePWA } from "@/hooks/use-pwa";
 import { trackEvent } from "@/lib/analytics";
 import { useIsMobile } from "@/hooks/use-mobile";
+import IOSInstallInstructions from "./ios-install-instructions";
 
 export default function PWAInstallBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  const { canInstall, install, isInstalled, isInWebView } = usePWA();
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const { canInstall, install, isInstalled, isInWebView, isIOS } = usePWA();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -44,6 +46,12 @@ export default function PWAInstallBanner() {
       trackEvent('pwa_already_installed', 'engagement', 'banner_click');
       localStorage.setItem('yumtrack-installed-dismissed', 'true');
       setIsVisible(false);
+      return;
+    }
+
+    if (isIOS) {
+      trackEvent('ios_install_instructions_shown', 'engagement', 'banner_click');
+      setShowIOSInstructions(true);
       return;
     }
 
@@ -109,6 +117,7 @@ export default function PWAInstallBanner() {
       trackEvent('pwa_install_unavailable', 'engagement', 'banner_attempt');
     }
   };
+
 
   const handleDismiss = () => {
     if (isInstalled) {
@@ -179,7 +188,7 @@ export default function PWAInstallBanner() {
                   onClick={handleInstall}
                   className="text-xs px-4 py-2 h-auto font-semibold"
                 >
-                  Download
+                  {isIOS ? 'Install' : 'Download'}
                 </Button>
                 <Button
                   size="sm"
@@ -194,6 +203,12 @@ export default function PWAInstallBanner() {
           </div>
         </div>
       </div>
+
+      {/* iOS Installation Instructions Modal */}
+      <IOSInstallInstructions
+        isOpen={showIOSInstructions}
+        onClose={() => setShowIOSInstructions(false)}
+      />
     </>
   );
 }
