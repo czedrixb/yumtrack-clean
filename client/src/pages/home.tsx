@@ -28,37 +28,50 @@ const Home = forwardRef<HomeRef>((props, ref) => {
     queryKey: ['/api/food-analyses/recent?limit=3'],
   });
 
-const analysisMutation = useMutation({
-  mutationFn: async (imageData: string) => {
-    const blob = dataURLtoBlob(imageData);
-    const formData = new FormData();
-    formData.append('image', blob, 'food-image.jpg');
-    
-    const response = await apiRequestFormData('POST', '/api/analyze-food', formData);
+  const analysisMutation = useMutation({
+    mutationFn: async (imageData: string) => {
+      const blob = dataURLtoBlob(imageData);
+      const formData = new FormData();
+      formData.append('image', blob, 'food-image.jpg');
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to analyze food');
-    }
+      const response = await apiRequestFormData('POST', '/api/analyze-food', formData);
 
-    return response.json() as Promise<FoodAnalysis>;
-  },
-  onSuccess: (result) => {
-    setAnalysisResult(result);
-    setCurrentView('results');
-    trackEvent('food_analysis_complete', 'engagement', 'success');
-    queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
-  },
-  onError: (error) => {
-    toast({
-      title: "Analysis failed",
-      description: error.message || "Unable to analyze food. Please try again.",
-      variant: "destructive",
-    });
-    setCurrentView('upload');
-  },
-});
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to analyze food');
+      }
+
+      return response.json() as Promise<FoodAnalysis>;
+    },
+    onSuccess: (result) => {
+      setAnalysisResult(result);
+      setCurrentView('results');
+      trackEvent('food_analysis_complete', 'engagement', 'success');
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/food-analyses/recent?limit=3'] });
+    },
+    onError: (error) => {
+      const errorMessage = error.message.toLowerCase();
+
+      let userFriendlyMessage = "Unable to analyze the image. Please try again with a clearer photo of food.";
+
+      if (errorMessage.includes('missing required nutrition data') ||
+        errorMessage.includes('invalid response from openai')) {
+        userFriendlyMessage = "We couldn't identify any food in this image. Please make sure you're taking a clear photo of food items.";
+      } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+        userFriendlyMessage = "Network connection issue. Please check your internet and try again.";
+      } else if (errorMessage.includes('timeout')) {
+        userFriendlyMessage = "The analysis is taking too long. Please try again with a clearer image.";
+      }
+
+      toast({
+        title: "Analysis failed",
+        description: userFriendlyMessage,
+        variant: "destructive",
+      });
+      setCurrentView('upload');
+    },
+  });
 
   const handleImageSelected = (imageData: string) => {
     setSelectedImage(imageData);
@@ -136,12 +149,12 @@ const analysisMutation = useMutation({
         <div className="flex items-center justify-center gap-5">
           <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             {/* Magnifying glass circle */}
-            <circle cx="45" cy="45" r="30" stroke="#fd7e14" strokeWidth="10" fill="none"/>
+            <circle cx="45" cy="45" r="30" stroke="#fd7e14" strokeWidth="10" fill="none" />
             {/* Magnifying glass handle */}
-            <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" strokeWidth="12" strokeLinecap="round"/>
+            <line x1="68" y1="68" x2="85" y2="85" stroke="#fd7e14" strokeWidth="12" strokeLinecap="round" />
             {/* Leaf inside the glass */}
-            <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745"/>
-            <path d="M45,55 C47,45 55,43 55,35" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+            <path d="M45,55 C35,55 30,45 35,35 C40,25 50,30 55,40 C60,50 55,55 45,55 Z" fill="#28a745" />
+            <path d="M45,55 C47,45 55,43 55,35" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
           </svg>
           <span className="text-4xl text-[#343a40] font-semibold font-['Poppins',system-ui,-apple-system,sans-serif]">YumTrack</span>
         </div>
@@ -152,21 +165,21 @@ const analysisMutation = useMutation({
       {selectedImage && (
         <Card className="overflow-hidden">
           <div className="aspect-square bg-muted">
-            <img 
-              src={selectedImage} 
-              alt="Food preview" 
+            <img
+              src={selectedImage}
+              alt="Food preview"
               className="w-full h-full object-cover"
             />
           </div>
           <CardContent className="p-4 flex justify-between items-center">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => setSelectedImage(null)}
             >
               Retake
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 if (selectedImage) {
                   setCurrentView('analyzing');
@@ -186,7 +199,7 @@ const analysisMutation = useMutation({
       {/* Upload Buttons */}
       {!selectedImage && (
         <div className="space-y-3">
-          <Button 
+          <Button
             onClick={() => {
               trackEvent('camera_open', 'engagement', 'photo_capture');
               setCurrentView('camera');
@@ -196,8 +209,8 @@ const analysisMutation = useMutation({
             <Camera className="w-6 h-6 mr-3" />
             Take Photo
           </Button>
-          
-          <Button 
+
+          <Button
             variant="outline"
             className="w-full py-4 h-auto text-lg font-semibold border-2 hover:border-primary hover:text-primary"
             onClick={() => {
@@ -232,8 +245,8 @@ const analysisMutation = useMutation({
           {recentAnalyses.map((analysis) => (
             <Card key={analysis.id} className="p-4">
               <div className="flex items-center space-x-4">
-                <img 
-                  src={analysis.imageUrl} 
+                <img
+                  src={analysis.imageUrl}
                   alt={analysis.foodName}
                   className="w-16 h-16 rounded-xl object-cover"
                 />
@@ -244,8 +257,8 @@ const analysisMutation = useMutation({
                     {formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })}
                   </p>
                 </div>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => {
                     setAnalysisResult(analysis);

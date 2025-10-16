@@ -18,14 +18,14 @@ export default function PWAInstallBanner() {
 
     const dismissed = localStorage.getItem('yumtrack-install-dismissed');
     const installedDismissed = localStorage.getItem('yumtrack-installed-dismissed');
-    
+
     if ((!isInstalled && !dismissed) || (isInstalled && !installedDismissed)) {
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
     } else {
       setIsVisible(false);
     }
-  }, [canInstall, isInstalled, isMobile]); 
+  }, [canInstall, isInstalled, isMobile]);
 
   useEffect(() => {
     if (isVisible && isInstalled && isMobile) {
@@ -35,26 +35,26 @@ export default function PWAInstallBanner() {
       }, 5000);
       return () => clearTimeout(autoDismissTimer);
     }
-  }, [isVisible, isInstalled, isMobile]); 
+  }, [isVisible, isInstalled, isMobile]);
 
   const handleInstall = async () => {
     trackEvent('pwa_install_attempt', 'engagement', 'banner_click');
-    
+
     if (isInstalled) {
       trackEvent('pwa_already_installed', 'engagement', 'banner_click');
       localStorage.setItem('yumtrack-installed-dismissed', 'true');
       setIsVisible(false);
       return;
     }
-    
+
     if (isInWebView) {
       const currentUrl = window.location.href;
       const userAgent = navigator.userAgent.toLowerCase();
-      
+
       trackEvent('webview_browser_redirect', 'engagement', 'install_redirect');
-      
+
       let opened = false;
-      
+
       if (userAgent.includes('kakaotalk')) {
         try {
           window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
@@ -72,7 +72,7 @@ export default function PWAInstallBanner() {
           console.log('Messenger method 1 failed, trying fallback');
         }
       }
-      
+
       if (!opened) {
         try {
           const newWindow = window.open(currentUrl, '_blank');
@@ -83,14 +83,14 @@ export default function PWAInstallBanner() {
           console.log('Window.open failed, trying location change');
         }
       }
-      
+
       if (!opened) {
         window.location.href = currentUrl;
       }
-      
+
       return;
     }
-    
+
     if (canInstall && install) {
       try {
         const installed = await install();
@@ -132,14 +132,13 @@ export default function PWAInstallBanner() {
 
   return (
     <>
-      <div 
-        className={`fixed top-0 left-0 right-0 p-4 z-50 shadow-lg animate-in slide-in-from-top ${
-          isInstalled ? 'bg-green-600 text-white' : 'bg-primary text-primary-foreground'
-        }`}
+      <div
+        className={`fixed top-0 left-0 right-0 p-4 z-50 shadow-lg animate-in slide-in-from-top ${isInstalled ? 'bg-green-600 text-white' : 'bg-primary text-primary-foreground'
+          }`}
         onClick={!isInstalled ? handleInstall : undefined}
       >
         <div className="flex items-center justify-between max-w-sm mx-auto">
-          <div 
+          <div
             className="flex items-center space-x-3 flex-1 cursor-pointer"
             onClick={handleAppInfoClick}
           >
@@ -159,7 +158,7 @@ export default function PWAInstallBanner() {
               )}
             </div>
           </div>
-          <div 
+          <div
             className="flex space-x-2"
             onClick={(e) => e.stopPropagation()}
           >

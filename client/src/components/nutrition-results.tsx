@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Share2, Camera } from "lucide-react";
+import { ArrowLeft, Share2, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { FoodAnalysis } from "@shared/schema";
 
@@ -12,42 +12,18 @@ interface NutritionResultsProps {
   onBack?: () => void;
 }
 
-export default function NutritionResults({ 
-  analysis, 
-  onNewAnalysis, 
-  showBackButton = false, 
-  onBack 
+export default function NutritionResults({
+  analysis,
+  onNewAnalysis,
+  showBackButton = false,
+  onBack
 }: NutritionResultsProps) {
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
 
   // Parse JSON fields
   const vitamins = analysis.vitamins ? JSON.parse(analysis.vitamins) : [];
   const minerals = analysis.minerals ? JSON.parse(analysis.minerals) : [];
   const healthInsights = analysis.healthInsights ? JSON.parse(analysis.healthInsights) : [];
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      // Save to local storage as backup
-      const savedAnalyses = JSON.parse(localStorage.getItem('nutrisnap-saved') || '[]');
-      savedAnalyses.push(analysis);
-      localStorage.setItem('nutrisnap-saved', JSON.stringify(savedAnalyses));
-      
-      toast({
-        title: "Analysis saved",
-        description: "Your nutrition analysis has been saved successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Save failed",
-        description: "Unable to save analysis. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleShare = async () => {
     const shareData = {
@@ -91,8 +67,8 @@ export default function NutritionResults({
       {/* Food Identification */}
       <Card className="overflow-hidden">
         <div className="aspect-square bg-muted">
-          <img 
-            src={analysis.imageUrl} 
+          <img
+            src={analysis.imageUrl}
             alt={analysis.foodName}
             className="w-full h-full object-cover"
           />
@@ -104,7 +80,7 @@ export default function NutritionResults({
               {Math.round(analysis.confidence * 100)}% confidence match
             </p>
           </div>
-          
+
           {/* Calorie Summary */}
           <div className="bg-gradient-primary rounded-xl p-6 text-white text-center">
             <div className="text-4xl font-bold">{analysis.calories}</div>
@@ -134,7 +110,7 @@ export default function NutritionResults({
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-secondary rounded-full"></div>
@@ -210,33 +186,24 @@ export default function NutritionResults({
       )}
 
       {/* Action Buttons */}
-      <div className="flex space-x-3">
-        <Button 
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex-1 bg-secondary text-secondary-foreground shadow-lg hover:bg-secondary/90"
-        >
-          <Save className="w-5 h-5 mr-2" />
-          {isSaving ? 'Saving...' : 'Save'}
-        </Button>
-        <Button 
+      <div className="space-y-3">
+        <Button
           onClick={handleShare}
           variant="outline"
-          className="flex-1 border-2 hover:border-primary hover:text-primary"
+          className="w-full border-2 hover:border-primary hover:text-primary py-3 h-auto text-lg font-medium"
         >
-          <Share2 className="w-5 h-5 mr-2" />
+          <Share2 className="w-6 h-6 mr-3" />
           Share
         </Button>
-      </div>
 
-      {/* New Analysis Button */}
-      <Button 
-        onClick={onNewAnalysis}
-        className="w-full bg-primary text-primary-foreground py-4 h-auto text-lg font-semibold shadow-lg hover:bg-primary/90"
-      >
-        <Camera className="w-6 h-6 mr-3" />
-        Analyze Another Food
-      </Button>
+        <Button
+          onClick={onNewAnalysis}
+          className="w-full bg-primary text-primary-foreground py-4 h-auto text-lg font-semibold shadow-lg hover:bg-primary/90"
+        >
+          <Camera className="w-6 h-6 mr-3" />
+          Analyze Another Food
+        </Button>
+      </div>
     </main>
   );
 }
