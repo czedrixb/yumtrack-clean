@@ -8,9 +8,21 @@ import { useToast } from "@/hooks/use-toast";
 import NutritionResults from "@/components/nutrition-results";
 import type { FoodAnalysis } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function History() {
   const [selectedAnalysis, setSelectedAnalysis] = useState<FoodAnalysis | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [analysisToDelete, setAnalysisToDelete] = useState<FoodAnalysis | null>(null);
   const { toast } = useToast();
 
   const { data: analyses = [], isLoading } = useQuery<FoodAnalysis[]>({
@@ -36,6 +48,24 @@ export default function History() {
       });
     },
   });
+
+  const handleDeleteClick = (analysis: FoodAnalysis) => {
+    setAnalysisToDelete(analysis);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (analysisToDelete) {
+      deleteMutation.mutate(analysisToDelete.id);
+      setDeleteDialogOpen(false);
+      setAnalysisToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setAnalysisToDelete(null);
+  };
 
   if (selectedAnalysis) {
     return (
@@ -92,8 +122,8 @@ export default function History() {
             <Card key={analysis.id}>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <img 
-                    src={analysis.imageUrl} 
+                  <img
+                    src={analysis.imageUrl}
                     alt={analysis.foodName}
                     className="w-16 h-16 rounded-xl object-cover"
                   />
@@ -105,17 +135,17 @@ export default function History() {
                     </p>
                   </div>
                   <div className="flex space-x-2">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => setSelectedAnalysis(analysis)}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
-                      onClick={() => deleteMutation.mutate(analysis.id)}
+                      onClick={() => handleDeleteClick(analysis)}
                       disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -127,6 +157,31 @@ export default function History() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Analysis</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the analysis for "{analysisToDelete?.foodName}"?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }

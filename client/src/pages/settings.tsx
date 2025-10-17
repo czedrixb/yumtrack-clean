@@ -19,7 +19,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
-import { Download, Mail, Star, MessageCircle, LogOut, User, Mail as MailIcon } from "lucide-react";
+import { Download, Mail, Star, MessageCircle, LogOut, User, Mail as MailIcon, Edit, Key, User as UserIcon } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,9 +35,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import emailjs from "@emailjs/browser";
-import { logoutUser } from "@/lib/auth";
-import { auth } from "@/lib/firebase"; 
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
+import { logoutUser, updateUserProfile, updateUserPassword, updateUserEmail } from "@/lib/auth";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { queryClient } from "@/lib/queryClient";
+
+const profileSchema = z.object({
+  displayName: z.string().min(2, "Name must be at least 2 characters"),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+const emailSchema = z.object({
+  newEmail: z.string().email("Please enter a valid email address"),
+  currentPassword: z.string().min(1, "Current password is required to change email"),
+});
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -55,20 +74,50 @@ const feedbackSchema = z.object({
 });
 
 export default function Settings() {
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false); 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   const { toast } = useToast();
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
   const isMobile = useIsMobile();
-    const [, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
+
+  const profileForm = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      displayName: currentUser?.displayName || "",
+    },
+  });
+
+  const passwordForm = useForm<z.infer<typeof passwordSchema>>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      newEmail: currentUser?.email || "",
+      currentPassword: "",
+    },
+  });
 
   const contactForm = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
@@ -89,6 +138,18 @@ export default function Settings() {
   });
 
   useEffect(() => {
+    if (currentUser) {
+      profileForm.reset({
+        displayName: currentUser.displayName || "",
+      });
+      emailForm.reset({
+        newEmail: currentUser.email || "",
+        currentPassword: "",
+      });
+    }
+  }, [currentUser, profileForm, emailForm]);
+
+  useEffect(() => {
     const savedDarkMode = localStorage.getItem("nutrisnap-dark-mode");
     if (savedDarkMode !== null) setDarkMode(JSON.parse(savedDarkMode));
 
@@ -99,6 +160,113 @@ export default function Settings() {
 
     return () => unsubscribe();
   }, []);
+
+  const onProfileSubmit = async (values: z.infer<typeof profileSchema>) => {
+    setIsUpdatingProfile(true);
+    try {
+      const result = await updateUserProfile(values.displayName);
+
+      if (result.success) {
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been updated successfully.",
+        });
+
+        // Update local state
+        setCurrentUser({
+          ...currentUser!,
+          displayName: values.displayName,
+        });
+
+        setShowProfileModal(false);
+      } else {
+        toast({
+          title: "Update failed",
+          description: result.error || "Failed to update profile",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while updating your profile.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const onPasswordSubmit = async (values: z.infer<typeof passwordSchema>) => {
+    setIsUpdatingPassword(true);
+    try {
+      const result = await updateUserPassword(values.currentPassword, values.newPassword);
+
+      if (result.success) {
+        toast({
+          title: "Password updated",
+          description: "Your password has been updated successfully.",
+        });
+
+        passwordForm.reset();
+        setShowPasswordModal(false);
+      } else {
+        toast({
+          title: "Update failed",
+          description: result.error || "Failed to update password",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while updating your password.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
+    setIsUpdatingEmail(true);
+    try {
+      const result = await updateUserEmail(values.currentPassword, values.newEmail);
+
+      if (result.success) {
+        toast({
+          title: "Email updated",
+          description: "Your email has been updated successfully.",
+        });
+
+        // Update local state
+        setCurrentUser({
+          ...currentUser!,
+          email: values.newEmail,
+        });
+
+        emailForm.reset({
+          newEmail: values.newEmail,
+          currentPassword: "",
+        });
+        setShowEmailModal(false);
+      } else {
+        toast({
+          title: "Update failed",
+          description: result.error || "Failed to update email",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while updating your email.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
 
   const updateSetting = (key: string, value: boolean) => {
     localStorage.setItem(key, JSON.stringify(value));
@@ -111,25 +279,38 @@ export default function Settings() {
   const handleClearHistory = async () => {
     setIsClearing(true);
     try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("You must be logged in to clear history");
+      }
+
+      const token = await currentUser.getIdToken();
+
       const response = await fetch("/api/food-analyses", {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to clear history");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to clear history");
       }
+
+      await queryClient.invalidateQueries({ queryKey: ['/api/food-analyses'] });
 
       toast({
         title: "History cleared",
         description: "All analysis history has been removed.",
       });
 
-      // Refresh the cache to update any displayed data
-      window.location.reload();
     } catch (error) {
+      console.error("Clear history error:", error);
       toast({
         title: "Error",
-        description: "Failed to clear history. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to clear history. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -352,17 +533,17 @@ export default function Settings() {
     }
   };
 
-    const handleLogout = async () => {
+  const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
       const result = await logoutUser();
-      
+
       if (result.success) {
         toast({
           title: "Logged out",
           description: "You have been successfully logged out.",
         });
-        
+
         // Redirect to login page
         setLocation('/login');
       } else {
@@ -418,8 +599,8 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-{/* Account Settings */}
-<Card>
+      {/* Account Settings */}
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Account</CardTitle>
         </CardHeader>
@@ -446,7 +627,36 @@ export default function Settings() {
                     </div>
                   </div>
                 </div>
-              
+
+                {/* Edit Profile Button */}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setShowProfileModal(true)}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+
+                {/* Change Password Button */}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Change Password
+                </Button>
+
+                {/* Change Email Button */}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setShowEmailModal(true)}
+                >
+                  <MailIcon className="w-4 h-4 mr-2" />
+                  Change Email
+                </Button>
               </div>
 
               {/* Logout Button */}
@@ -492,7 +702,7 @@ export default function Settings() {
                   Sign in to access all features
                 </p>
               </div>
-              <Button 
+              <Button
                 onClick={() => setLocation('/login')}
                 className="w-full"
               >
@@ -502,6 +712,201 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Profile Modal */}
+      <AlertDialog open={showProfileModal} onOpenChange={setShowProfileModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit Profile</AlertDialogTitle>
+            <AlertDialogDescription>
+              Update your display name and profile information.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <Form {...profileForm}>
+            <form
+              onSubmit={profileForm.handleSubmit(onProfileSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={profileForm.control}
+                name="displayName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Display Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Your display name"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setShowProfileModal(false)}>
+                  Cancel
+                </AlertDialogCancel>
+                <Button type="submit" disabled={isUpdatingProfile}>
+                  {isUpdatingProfile ? "Updating..." : "Update Profile"}
+                </Button>
+              </AlertDialogFooter>
+            </form>
+          </Form>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Change Password Modal */}
+      <AlertDialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Password</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter your current password and set a new one.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <Form {...passwordForm}>
+            <form
+              onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter current password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter new password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Confirm new password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => {
+                  setShowPasswordModal(false);
+                  passwordForm.reset();
+                }}>
+                  Cancel
+                </AlertDialogCancel>
+                <Button type="submit" disabled={isUpdatingPassword}>
+                  {isUpdatingPassword ? "Updating..." : "Change Password"}
+                </Button>
+              </AlertDialogFooter>
+            </form>
+          </Form>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Change Email Modal */}
+      <AlertDialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Email</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter your new email address and confirm with your current password.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <Form {...emailForm}>
+            <form
+              onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={emailForm.control}
+                name="newEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Enter new email address"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={emailForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter current password to confirm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setShowEmailModal(false)}>
+                  Cancel
+                </AlertDialogCancel>
+                <Button type="submit" disabled={isUpdatingEmail}>
+                  {isUpdatingEmail ? "Updating..." : "Change Email"}
+                </Button>
+              </AlertDialogFooter>
+            </form>
+          </Form>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* App Installation - Mobile Only */}
       {isMobile && (
@@ -564,49 +969,57 @@ export default function Settings() {
           <CardTitle className="text-lg">Data Management</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          {currentUser ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  ></path>
-                </svg>
-                Clear All History
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Clear All History</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to clear all analysis history? This will
-                  permanently delete all your food analyses and cannot be
-                  undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleClearHistory}
-                  disabled={isClearing}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isClearing ? "Clearing..." : "Clear History"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    ></path>
+                  </svg>
+                  Clear All History
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear All History</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to clear all analysis history? This will
+                    permanently delete all your food analyses and cannot be
+                    undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleClearHistory}
+                    disabled={isClearing}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isClearing ? "Clearing..." : "Clear History"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <div className="text-center p-4 border border-dashed border-muted-foreground/20 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Sign in to manage your analysis history
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -815,11 +1228,10 @@ export default function Settings() {
                             key={star}
                             type="button"
                             onClick={() => field.onChange(star)}
-                            className={`p-1 transition-colors ${
-                              star <= field.value
-                                ? "text-yellow-400"
-                                : "text-gray-300 hover:text-yellow-200"
-                            }`}
+                            className={`p-1 transition-colors ${star <= field.value
+                              ? "text-yellow-400"
+                              : "text-gray-300 hover:text-yellow-200"
+                              }`}
                           >
                             <Star
                               className="w-6 h-6"

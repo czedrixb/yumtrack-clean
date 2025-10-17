@@ -223,7 +223,7 @@ export default function LoginPage() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors hover:underline"
               onClick={() => {
                 setIsLogin(!isLogin);
                 // Clear form when switching modes
