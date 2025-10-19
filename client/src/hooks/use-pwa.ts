@@ -16,6 +16,7 @@ export function usePWA() {
   const [isInWebView, setIsInWebView] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
   useEffect(() => {
     const checkPWAEligibility = () => {
@@ -48,8 +49,8 @@ export function usePWA() {
       return;
     }
 
-    // For iOS Safari, we can always "install" by showing instructions
-    if (isIOSDevice) {
+    // For iOS Safari, we can always "install" by showing the share sheet
+    if (isIOSDevice && isSafariBrowser) {
       setCanInstall(true);
     }
 
@@ -141,11 +142,21 @@ export function usePWA() {
   }, []);
 
   const install = async (): Promise<boolean> => {
-    // For iOS Safari, show installation instructions
-    if (isIOS) {
-      console.log('Showing iOS installation instructions');
-      // This will trigger the iOS instructions in your component
-      return true;
+    // For iOS Safari, trigger the native share sheet
+    if (isIOS && isSafari) {
+      console.log('Triggering iOS Safari Add to Home Screen');
+      
+      // Check if we're in standalone mode already
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('Already in standalone mode');
+        return true;
+      }
+      
+      // For iOS Safari, we'll let the browser handle the installation
+      // The user needs to use the share sheet and "Add to Home Screen"
+      // We can't programmatically trigger this due to security restrictions
+      setShowIOSInstructions(true);
+      return false;
     }
 
     if (!deferredPrompt) {
@@ -182,6 +193,8 @@ export function usePWA() {
     isInWebView,
     isIOS,
     isSafari,
+    showIOSInstructions,
+    setShowIOSInstructions,
     install,
   };
 }
