@@ -16,22 +16,36 @@ export function usePWA() {
   const [isInWebView, setIsInWebView] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const checkPWAEligibility = () => {
-      const hasServiceWorker = 'serviceWorker' in navigator;
-      const hasManifest = document.querySelector('link[rel="manifest"]');
-      const isHTTPS = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-      
-      console.log('PWA Eligibility Check:', {
-        hasServiceWorker,
-        hasManifest: !!hasManifest,
-        isHTTPS,
-        userAgent: navigator.userAgent
-      });
-      
-      return hasServiceWorker && hasManifest && isHTTPS;
+      // Check if manifest exists and is accessible
+      const manifestLink = document.querySelector('link[rel="manifest"]');
+      if (!manifestLink) {
+        console.warn('No manifest found');
+        return false;
+      }
+
+      // Check if manifest is accessible
+      return fetch('/manifest.json')
+        .then(response => {
+          if (!response.ok) {
+            console.warn('Manifest not accessible');
+            return false;
+          }
+          return response.json().then(manifest => {
+            const hasIcons = manifest.icons && manifest.icons.length > 0;
+            const hasRequiredFields = manifest.name && manifest.start_url;
+            
+            console.log('Manifest check:', { hasIcons, hasRequiredFields });
+            return hasIcons && hasRequiredFields;
+          });
+        })
+        .catch(() => {
+          console.warn('Failed to fetch manifest');
+          return false;
+        });
     };
 
     // Detect iOS and Safari
@@ -42,27 +56,6 @@ export function usePWA() {
     setIsIOS(isIOSDevice);
     setIsSafari(isSafariBrowser);
 
-    console.log('Browser Detection:', { isIOS: isIOSDevice, isSafari: isSafariBrowser });
-
-    if (!checkPWAEligibility()) {
-      console.warn('PWA criteria not met - install banner will not show');
-      return;
-    }
-
-    // For iOS Safari, we can always "install" by showing the share sheet
-    if (isIOSDevice && isSafariBrowser) {
-      setCanInstall(true);
-    }
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        console.log('Service Worker registrations:', registrations.length);
-        registrations.forEach(reg => {
-          console.log('SW scope:', reg.scope);
-        });
-      });
-    }
-
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isInWebApp = (window.navigator as any).standalone === true;
@@ -70,24 +63,14 @@ export function usePWA() {
       console.log('PWA Installation Status:', {
         isStandalone,
         isInWebApp,
-        url: window.location.href
+        userAgent: navigator.userAgent
       });
       
       return isStandalone || isInWebApp;
     };
 
-    setIsInstalled(checkInstalled());
-
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    const handleDisplayModeChange = (e: MediaQueryListEvent) => {
-      console.log('Display mode changed:', e.matches);
-      setIsInstalled(e.matches);
-    };
-    
-    mediaQuery.addEventListener('change', handleDisplayModeChange);
-
     const detectWebView = () => {
-      const isWebView = (
+      return (
         userAgent.includes('kakaotalk') ||
         userAgent.includes('fban') || userAgent.includes('fbav') ||
         userAgent.includes('instagram') ||
@@ -97,18 +80,26 @@ export function usePWA() {
         (userAgent.includes('android') && userAgent.includes('version') && !userAgent.includes('chrome')) ||
         ((userAgent.includes('iphone') || userAgent.includes('ipad')) && !userAgent.includes('safari'))
       );
-      
-      console.log('WebView Detection:', { isWebView, userAgent });
-      return isWebView;
     };
 
-    setIsInWebView(detectWebView());
+    // Initialize checks
+    Promise.resolve(checkPWAEligibility()).then(isEligible => {
+      if (!isEligible) {
+        console.warn('PWA criteria not met');
+        setIsReady(true);
+        return;
+      }
 
-    if ((window as any).deferredPrompt) {
-      console.log('Found existing deferred prompt');
-      setDeferredPrompt((window as any).deferredPrompt);
-      setCanInstall(true);
-    }
+      setIsInstalled(checkInstalled());
+      setIsInWebView(detectWebView());
+
+      // For iOS Safari, we can always show install instructions
+      if (isIOSDevice) {
+        setCanInstall(true);
+      }
+
+      setIsReady(true);
+    });
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -128,7 +119,6 @@ export function usePWA() {
       setCanInstall(false);
       setDeferredPrompt(null);
       (window as any).deferredPrompt = null;
-      localStorage.setItem('yumtrack-installed-dismissed', 'true');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -137,30 +127,17 @@ export function usePWA() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      mediaQuery.removeEventListener('change', handleDisplayModeChange);
     };
   }, []);
 
   const install = async (): Promise<boolean> => {
-    // For iOS Safari, trigger the native share sheet
-    if (isIOS && isSafari) {
-      console.log('Triggering iOS Safari Add to Home Screen');
-      
-      // Check if we're in standalone mode already
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('Already in standalone mode');
-        return true;
-      }
-      
-      // For iOS Safari, we'll let the browser handle the installation
-      // The user needs to use the share sheet and "Add to Home Screen"
-      // We can't programmatically trigger this due to security restrictions
-      setShowIOSInstructions(true);
-      return false;
+    if (isIOS) {
+      console.log('iOS device - showing installation instructions');
+      return true; // Signal that iOS instructions should be shown
     }
 
     if (!deferredPrompt) {
-      console.log('No deferred prompt available for installation');
+      console.log('No deferred prompt available');
       return false;
     }
 
@@ -177,8 +154,6 @@ export function usePWA() {
         setCanInstall(false);
         (window as any).deferredPrompt = null;
         return true;
-      } else {
-        console.log('User dismissed PWA installation');
       }
     } catch (error) {
       console.error('Error installing PWA:', error);
@@ -193,8 +168,7 @@ export function usePWA() {
     isInWebView,
     isIOS,
     isSafari,
-    showIOSInstructions,
-    setShowIOSInstructions,
+    isReady,
     install,
   };
 }

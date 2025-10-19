@@ -8,16 +8,8 @@ import IOSInstallInstructions from "./ios-install-instructions";
 
 export default function PWAInstallBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  const {
-    canInstall,
-    install,
-    isInstalled,
-    isInWebView,
-    isIOS,
-    isSafari,
-    showIOSInstructions,
-    setShowIOSInstructions
-  } = usePWA();
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const { canInstall, install, isInstalled, isInWebView, isIOS } = usePWA();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -57,11 +49,10 @@ export default function PWAInstallBanner() {
       return;
     }
 
-    // For iOS Safari, show instructions but don't prevent the default behavior
-    if (isIOS && isSafari) {
+    if (isIOS) {
       trackEvent('ios_install_instructions_shown', 'engagement', 'banner_click');
       setShowIOSInstructions(true);
-      // Don't return here - let the installation process continue
+      return;
     }
 
     if (isInWebView) {
@@ -126,6 +117,7 @@ export default function PWAInstallBanner() {
       trackEvent('pwa_install_unavailable', 'engagement', 'banner_attempt');
     }
   };
+
 
   const handleDismiss = () => {
     if (isInstalled) {
@@ -196,7 +188,7 @@ export default function PWAInstallBanner() {
                   onClick={handleInstall}
                   className="text-xs px-4 py-2 h-auto font-semibold"
                 >
-                  {isIOS ? 'Add to Home Screen' : 'Download'}
+                  {isIOS ? 'Install' : 'Download'}
                 </Button>
                 <Button
                   size="sm"
