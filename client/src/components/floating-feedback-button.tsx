@@ -104,6 +104,19 @@ export default function FloatingFeedbackButton() {
     }
   };
 
+  // Handle dialog open/close with form reset
+  const handleDialogChange = (open: boolean) => {
+    setShowFeedbackModal(open);
+    if (!open) {
+      // Reset form when dialog closes
+      feedbackForm.reset({
+        name: "",
+        rating: 0,
+        message: "",
+      });
+    }
+  };
+
   return (
     <>
       {/* Floating Feedback Button */}
@@ -116,7 +129,7 @@ export default function FloatingFeedbackButton() {
       </Button>
 
       {/* Feedback Modal */}
-      <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+      <AlertDialog open={showFeedbackModal} onOpenChange={handleDialogChange}>
         <AlertDialogContent className="max-w-md mx-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Share Your Feedback</AlertDialogTitle>
@@ -136,7 +149,7 @@ export default function FloatingFeedbackButton() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel className="text-foreground">Name</FormLabel>
                     <FormControl>
                       <Input placeholder="Your name" {...field} />
                     </FormControl>
@@ -150,7 +163,7 @@ export default function FloatingFeedbackButton() {
                 name="rating"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rating</FormLabel>
+                    <FormLabel className="text-foreground">Rating</FormLabel>
                     <FormControl>
                       <div className="flex items-center space-x-1">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -158,11 +171,10 @@ export default function FloatingFeedbackButton() {
                             key={star}
                             type="button"
                             onClick={() => field.onChange(star)}
-                            className={`p-1 transition-colors ${
-                              star <= field.value
+                            className={`p-1 transition-colors ${star <= field.value
                                 ? "text-yellow-400"
                                 : "text-gray-300 hover:text-yellow-200"
-                            }`}
+                              }`}
                           >
                             <Star
                               className="w-6 h-6"
@@ -189,7 +201,7 @@ export default function FloatingFeedbackButton() {
                 name="message"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Feedback</FormLabel>
+                    <FormLabel className="text-foreground">Feedback</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Share your thoughts, suggestions, or ideas for improvement..."
@@ -203,7 +215,14 @@ export default function FloatingFeedbackButton() {
               />
 
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>
+                <AlertDialogCancel onClick={() => {
+                  setShowFeedbackModal(false);
+                  feedbackForm.reset({
+                    name: "",
+                    rating: 0,
+                    message: "",
+                  });
+                }}>
                   Cancel
                 </AlertDialogCancel>
                 <Button type="submit" disabled={isFeedbackSubmitting}>

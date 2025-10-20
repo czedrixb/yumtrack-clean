@@ -714,7 +714,14 @@ export default function Settings() {
       </Card>
 
       {/* Edit Profile Modal */}
-      <AlertDialog open={showProfileModal} onOpenChange={setShowProfileModal}>
+      <AlertDialog open={showProfileModal} onOpenChange={(open) => {
+        setShowProfileModal(open);
+        if (!open) {
+          profileForm.reset({
+            displayName: currentUser?.displayName || "",
+          });
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Edit Profile</AlertDialogTitle>
@@ -733,7 +740,7 @@ export default function Settings() {
                 name="displayName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Display Name</FormLabel>
+                    <FormLabel className="text-foreground">Display Name</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Your display name"
@@ -759,7 +766,16 @@ export default function Settings() {
       </AlertDialog>
 
       {/* Change Password Modal */}
-      <AlertDialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+      <AlertDialog open={showPasswordModal} onOpenChange={(open) => {
+        setShowPasswordModal(open);
+        if (!open) {
+          passwordForm.reset({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          });
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change Password</AlertDialogTitle>
@@ -778,7 +794,7 @@ export default function Settings() {
                 name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Password</FormLabel>
+                    <FormLabel className="text-foreground">Current Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -796,7 +812,7 @@ export default function Settings() {
                 name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel className="text-foreground">New Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -814,7 +830,7 @@ export default function Settings() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormLabel className="text-foreground">Confirm New Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -844,7 +860,15 @@ export default function Settings() {
       </AlertDialog>
 
       {/* Change Email Modal */}
-      <AlertDialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+      <AlertDialog open={showEmailModal} onOpenChange={(open) => {
+        setShowEmailModal(open);
+        if (!open) {
+          emailForm.reset({
+            newEmail: currentUser?.email || "",
+            currentPassword: "",
+          });
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change Email</AlertDialogTitle>
@@ -863,7 +887,7 @@ export default function Settings() {
                 name="newEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Email</FormLabel>
+                    <FormLabel className="text-foreground">New Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -881,7 +905,7 @@ export default function Settings() {
                 name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Password</FormLabel>
+                    <FormLabel className="text-foreground" >Current Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -895,7 +919,13 @@ export default function Settings() {
               />
 
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setShowEmailModal(false)}>
+                <AlertDialogCancel onClick={() => {
+                  setShowEmailModal(false);
+                  emailForm.reset({
+                    newEmail: currentUser?.email || "",
+                    currentPassword: "",
+                  });
+                }}>
                   Cancel
                 </AlertDialogCancel>
                 <Button type="submit" disabled={isUpdatingEmail}>
@@ -1078,10 +1108,18 @@ export default function Settings() {
           </div>
 
           <div className="text-center space-y-2">
-            <Button variant="link" className="text-sm">
+            <Button
+              variant="link"
+              className="text-sm"
+              onClick={() => setLocation('/privacy-policy')}
+            >
               Privacy Policy
             </Button>
-            <Button variant="link" className="text-sm">
+            <Button
+              variant="link"
+              className="text-sm"
+              onClick={() => setLocation('/terms-of-service')}
+            >
               Terms of Service
             </Button>
             <Button
@@ -1097,7 +1135,16 @@ export default function Settings() {
       </Card>
 
       {/* Contact Support Modal */}
-      <AlertDialog open={showContactModal} onOpenChange={setShowContactModal}>
+      <AlertDialog open={showContactModal} onOpenChange={(open) => {
+        setShowContactModal(open);
+        if (!open) {
+          contactForm.reset({
+            name: "",
+            email: "",
+            message: "",
+          });
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Contact Support</AlertDialogTitle>
@@ -1117,7 +1164,7 @@ export default function Settings() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel className="text-foreground" >Name</FormLabel>
                     <FormControl>
                       <Input placeholder="Your name" {...field} />
                     </FormControl>
@@ -1131,7 +1178,7 @@ export default function Settings() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-foreground" >Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -1149,7 +1196,7 @@ export default function Settings() {
                 name="message"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Message</FormLabel>
+                    <FormLabel className="text-foreground" >Message</FormLabel> {/* Add className here */}
                     <FormControl>
                       <Textarea
                         placeholder="Describe your issue, feature request, or question..."
@@ -1163,21 +1210,14 @@ export default function Settings() {
               />
 
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setShowContactModal(false)}>
+                <AlertDialogCancel onClick={() => {
+                  setShowContactModal(false);
+                  contactForm.reset();
+                }}>
                   Cancel
                 </AlertDialogCancel>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Mail className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Send Message
-                    </>
-                  )}
+                  Submit
                 </Button>
               </AlertDialogFooter>
             </form>
@@ -1186,7 +1226,16 @@ export default function Settings() {
       </AlertDialog>
 
       {/* User Feedback Modal */}
-      <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+      <AlertDialog open={showFeedbackModal} onOpenChange={(open) => {
+        setShowFeedbackModal(open);
+        if (!open) {
+          feedbackForm.reset({
+            name: "",
+            rating: 0,
+            message: "",
+          });
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>User Feedback</AlertDialogTitle>
@@ -1206,7 +1255,7 @@ export default function Settings() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel className="text-foreground">Name</FormLabel>
                     <FormControl>
                       <Input placeholder="Your name" {...field} />
                     </FormControl>
@@ -1220,7 +1269,7 @@ export default function Settings() {
                 name="rating"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rating</FormLabel>
+                    <FormLabel className="text-foreground">Rating</FormLabel>
                     <FormControl>
                       <div className="flex items-center space-x-1">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -1258,7 +1307,7 @@ export default function Settings() {
                 name="message"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Feedback</FormLabel>
+                    <FormLabel className="text-foreground" >Feedback</FormLabel> {/* Add className here */}
                     <FormControl>
                       <Textarea
                         placeholder="Share your thoughts, suggestions, or ideas for improvement..."
@@ -1272,21 +1321,14 @@ export default function Settings() {
               />
 
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>
+                <AlertDialogCancel onClick={() => {
+                  setShowFeedbackModal(false);
+                  feedbackForm.reset();
+                }}>
                   Cancel
                 </AlertDialogCancel>
                 <Button type="submit" disabled={isFeedbackSubmitting}>
-                  {isFeedbackSubmitting ? (
-                    <>
-                      <Mail className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Send Feedback
-                    </>
-                  )}
+                  {/* ... button content ... */}
                 </Button>
               </AlertDialogFooter>
             </form>
