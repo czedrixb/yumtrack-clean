@@ -19,7 +19,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { usePWA } from "@/hooks/use-pwa";
-import { Download, Mail, Star, MessageCircle, LogOut, User, Mail as MailIcon, Edit, Key, User as UserIcon } from "lucide-react";
+import { Download, Mail, Star, MessageCircle, LogOut, User, Mail as MailIcon, Edit, Key, User as UserIcon, Eye, EyeOff } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -90,10 +90,55 @@ export default function Settings() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showEmailCurrentPassword, setShowEmailCurrentPassword] = useState(false);
+
   const { toast } = useToast();
   const { canInstall, install, isInstalled, isInWebView } = usePWA();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
+
+  // Function to get user-friendly error message (same as login page)
+  const getUserFriendlyError = (error: string) => {
+    if (error.includes('auth/invalid-credential')) {
+      return 'The email or password you entered is incorrect. Please try again.';
+    }
+    if (error.includes('auth/user-not-found')) {
+      return 'No account found with this email address. Please check your email or sign up for a new account.';
+    }
+    if (error.includes('auth/wrong-password')) {
+      return 'The password you entered is incorrect. Please try again.';
+    }
+    if (error.includes('auth/email-already-in-use')) {
+      return 'An account with this email already exists. Please sign in or use a different email.';
+    }
+    if (error.includes('auth/weak-password')) {
+      return 'Please choose a stronger password. It should be at least 6 characters long.';
+    }
+    if (error.includes('auth/invalid-email')) {
+      return 'Please enter a valid email address.';
+    }
+    if (error.includes('auth/network-request-failed')) {
+      return 'Network error. Please check your internet connection and try again.';
+    }
+    if (error.includes('auth/too-many-requests')) {
+      return 'Too many failed attempts. Please try again in a few minutes.';
+    }
+    if (error.includes('auth/requires-recent-login')) {
+      return 'For security reasons, please sign in again to change your email or password.';
+    }
+    if (error.includes('auth/provider-already-linked')) {
+      return 'This account is already linked to another authentication method.';
+    }
+    if (error.includes('auth/credential-already-in-use')) {
+      return 'This credential is already associated with another user account.';
+    }
+
+    return 'Something went wrong. Please try again.';
+  };
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -161,6 +206,23 @@ export default function Settings() {
     return () => unsubscribe();
   }, []);
 
+  // Password visibility toggle functions
+  const toggleCurrentPasswordVisibility = () => {
+    setShowCurrentPassword(!showCurrentPassword);
+  };
+
+  const toggleNewPasswordVisibility = () => {
+    setShowNewPassword(!showNewPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const toggleEmailCurrentPasswordVisibility = () => {
+    setShowEmailCurrentPassword(!showEmailCurrentPassword);
+  };
+
   const onProfileSubmit = async (values: z.infer<typeof profileSchema>) => {
     setIsUpdatingProfile(true);
     try {
@@ -180,16 +242,19 @@ export default function Settings() {
 
         setShowProfileModal(false);
       } else {
+        const friendlyError = getUserFriendlyError(result.error || '');
         toast({
           title: "Update failed",
-          description: result.error || "Failed to update profile",
+          description: friendlyError,
           variant: "destructive",
         });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const friendlyError = getUserFriendlyError(errorMessage);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while updating your profile.",
+        description: friendlyError,
         variant: "destructive",
       });
     } finally {
@@ -210,17 +275,24 @@ export default function Settings() {
 
         passwordForm.reset();
         setShowPasswordModal(false);
+        // Reset password visibility states
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setShowConfirmPassword(false);
       } else {
+        const friendlyError = getUserFriendlyError(result.error || '');
         toast({
           title: "Update failed",
-          description: result.error || "Failed to update password",
+          description: friendlyError,
           variant: "destructive",
         });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const friendlyError = getUserFriendlyError(errorMessage);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while updating your password.",
+        description: friendlyError,
         variant: "destructive",
       });
     } finally {
@@ -250,17 +322,22 @@ export default function Settings() {
           currentPassword: "",
         });
         setShowEmailModal(false);
+        // Reset password visibility state
+        setShowEmailCurrentPassword(false);
       } else {
+        const friendlyError = getUserFriendlyError(result.error || '');
         toast({
           title: "Update failed",
-          description: result.error || "Failed to update email",
+          description: friendlyError,
           variant: "destructive",
         });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const friendlyError = getUserFriendlyError(errorMessage);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while updating your email.",
+        description: friendlyError,
         variant: "destructive",
       });
     } finally {
@@ -308,9 +385,10 @@ export default function Settings() {
 
     } catch (error) {
       console.error("Clear history error:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clear history. Please try again.';
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to clear history. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -386,7 +464,17 @@ export default function Settings() {
       return;
     }
 
-    // For regular browsers, attempt PWA installation
+    // For regular browsers, check if app is already installed first
+    if (isInstalled) {
+      toast({
+        title: "App already installed",
+        description: "YumTrack is already installed on your home screen.",
+      });
+      trackEvent("pwa_already_installed", "engagement", "settings_install");
+      return;
+    }
+
+    // If not installed but can install, attempt installation
     if (canInstall && install) {
       try {
         const installed = await install();
@@ -401,23 +489,19 @@ export default function Settings() {
       } catch (error) {
         console.error("Installation failed:", error);
         trackEvent("pwa_install_failed", "engagement", "settings_install");
+        toast({
+          title: "Installation failed",
+          description: "Failed to install the app. Please try again.",
+          variant: "destructive",
+        });
       }
     } else {
-      // Check if app is already installed
-      if (isInstalled) {
-        toast({
-          title: "App already installed",
-          description: "YumTrack is already installed on your home screen.",
-        });
-        trackEvent("pwa_already_installed", "engagement", "settings_install");
-      } else {
-        // If PWA install isn't available, show unavailable message
-        toast({
-          title: "App already installed",
-          description: "YumTrack is already installed on your home screen.",
-        });
-        trackEvent("pwa_install_unavailable", "engagement", "settings_install");
-      }
+      // If PWA install isn't available, provide appropriate guidance
+      toast({
+        title: "Installation unavailable",
+        description: "Your browser doesn't support app installation. Look for the 'Add to Home Screen' option in your browser menu.",
+      });
+      trackEvent("pwa_install_unavailable", "engagement", "settings_install");
     }
   };
 
@@ -547,16 +631,19 @@ export default function Settings() {
         // Redirect to login page
         setLocation('/login');
       } else {
+        const friendlyError = getUserFriendlyError(result.error || '');
         toast({
           title: "Logout failed",
-          description: result.error || "Failed to log out. Please try again.",
+          description: friendlyError,
           variant: "destructive"
         });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const friendlyError = getUserFriendlyError(errorMessage);
       toast({
         title: "Error",
-        description: "An unexpected error occurred during logout.",
+        description: friendlyError,
         variant: "destructive"
       });
     } finally {
@@ -774,6 +861,10 @@ export default function Settings() {
             newPassword: "",
             confirmPassword: "",
           });
+          // Reset password visibility states when modal closes
+          setShowCurrentPassword(false);
+          setShowNewPassword(false);
+          setShowConfirmPassword(false);
         }
       }}>
         <AlertDialogContent>
@@ -796,11 +887,26 @@ export default function Settings() {
                   <FormItem>
                     <FormLabel className="text-foreground">Current Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter current password"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showCurrentPassword ? "text" : "password"}
+                          placeholder="Enter current password"
+                          {...field}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleCurrentPasswordVisibility}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                          aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                        >
+                          {showCurrentPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -814,11 +920,26 @@ export default function Settings() {
                   <FormItem>
                     <FormLabel className="text-foreground">New Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter new password"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showNewPassword ? "text" : "password"}
+                          placeholder="Enter new password"
+                          {...field}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleNewPasswordVisibility}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                          aria-label={showNewPassword ? "Hide password" : "Show password"}
+                        >
+                          {showNewPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -832,11 +953,26 @@ export default function Settings() {
                   <FormItem>
                     <FormLabel className="text-foreground">Confirm New Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirm new password"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm new password"
+                          {...field}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleConfirmPasswordVisibility}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -847,6 +983,9 @@ export default function Settings() {
                 <AlertDialogCancel onClick={() => {
                   setShowPasswordModal(false);
                   passwordForm.reset();
+                  setShowCurrentPassword(false);
+                  setShowNewPassword(false);
+                  setShowConfirmPassword(false);
                 }}>
                   Cancel
                 </AlertDialogCancel>
@@ -867,6 +1006,8 @@ export default function Settings() {
             newEmail: currentUser?.email || "",
             currentPassword: "",
           });
+          // Reset password visibility state when modal closes
+          setShowEmailCurrentPassword(false);
         }
       }}>
         <AlertDialogContent>
@@ -907,11 +1048,26 @@ export default function Settings() {
                   <FormItem>
                     <FormLabel className="text-foreground" >Current Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter current password to confirm"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showEmailCurrentPassword ? "text" : "password"}
+                          placeholder="Enter current password to confirm"
+                          {...field}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleEmailCurrentPasswordVisibility}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                          aria-label={showEmailCurrentPassword ? "Hide password" : "Show password"}
+                        >
+                          {showEmailCurrentPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -925,6 +1081,7 @@ export default function Settings() {
                     newEmail: currentUser?.email || "",
                     currentPassword: "",
                   });
+                  setShowEmailCurrentPassword(false);
                 }}>
                   Cancel
                 </AlertDialogCancel>
@@ -936,7 +1093,6 @@ export default function Settings() {
           </Form>
         </AlertDialogContent>
       </AlertDialog>
-
 
       {/* App Installation - Mobile Only */}
       {isMobile && (
@@ -1328,7 +1484,7 @@ export default function Settings() {
                   Cancel
                 </AlertDialogCancel>
                 <Button type="submit" disabled={isFeedbackSubmitting}>
-                  {/* ... button content ... */}
+                  {isFeedbackSubmitting ? "Sending..." : "Send Feedback"}
                 </Button>
               </AlertDialogFooter>
             </form>

@@ -142,7 +142,7 @@ export default function PWAInstallBanner() {
   return (
     <>
       <div
-        className={`fixed top-0 left-0 right-0 p-4 z-50 shadow-lg animate-in slide-in-from-top ${isInstalled ? 'bg-green-600 text-white' : 'bg-primary text-primary-foreground'
+        className={`w-full p-4 shadow-lg animate-in slide-in-from-top ${isInstalled ? 'bg-green-600 text-white' : 'bg-primary text-primary-foreground'
           }`}
         onClick={!isInstalled ? handleInstall : undefined}
       >

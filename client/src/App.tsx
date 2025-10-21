@@ -50,54 +50,59 @@ function Router() {
     !['/privacy-policy', '/terms-of-service'].includes(location);
 
   return (
-    <div className="min-h-screen bg-background pb-16">
+    <div className="min-h-screen bg-background">
+      {/* Banner at the very top of document flow */}
       <PWAInstallBanner />
-      <Switch>
-        <Route path="/login">
-          <LoginPage />
-        </Route>
 
-        <Route path="/">
-          <ProtectedRoute>
-            <Home ref={homeRef} />
-          </ProtectedRoute>
-        </Route>
+      {/* Main content area */}
+      <div className={showBottomNav ? "pb-16" : ""}>
+        <Switch>
+          <Route path="/login">
+            <LoginPage />
+          </Route>
 
-        <Route path="/history">
-          <ProtectedRoute>
-            <History />
-          </ProtectedRoute>
-        </Route>
+          <Route path="/">
+            <ProtectedRoute>
+              <Home ref={homeRef} />
+            </ProtectedRoute>
+          </Route>
 
-        <Route path="/stats">
-          <ProtectedRoute>
-            <Stats />
-          </ProtectedRoute>
-        </Route>
+          <Route path="/history">
+            <ProtectedRoute>
+              <History />
+            </ProtectedRoute>
+          </Route>
 
-        <Route path="/settings">
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        </Route>
+          <Route path="/stats">
+            <ProtectedRoute>
+              <Stats />
+            </ProtectedRoute>
+          </Route>
 
-        <Route path="/download">
-          <ProtectedRoute>
-            <Download />
-          </ProtectedRoute>
-        </Route>
+          <Route path="/settings">
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          </Route>
 
-        {/* Public routes - no authentication required */}
-        <Route path="/privacy-policy">
-          <PrivacyPolicy />
-        </Route>
+          <Route path="/download">
+            <ProtectedRoute>
+              <Download />
+            </ProtectedRoute>
+          </Route>
 
-        <Route path="/terms-of-service">
-          <TermsOfService />
-        </Route>
+          {/* Public routes - no authentication required */}
+          <Route path="/privacy-policy">
+            <PrivacyPolicy />
+          </Route>
 
-        <Route component={NotFound} />
-      </Switch>
+          <Route path="/terms-of-service">
+            <TermsOfService />
+          </Route>
+
+          <Route component={NotFound} />
+        </Switch>
+      </div>
 
       {/* Only show navigation when user is logged in and not on excluded pages */}
       {showBottomNav && (
