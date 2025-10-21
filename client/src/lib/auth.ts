@@ -7,7 +7,8 @@ import {
   signOut,
   UserCredential,
   EmailAuthProvider,
-  reauthenticateWithCredential
+  reauthenticateWithCredential,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -232,6 +233,36 @@ export const logoutUser = async (): Promise<AuthResult> => {
     return {
       success: false,
       error: error.message
+    };
+  }
+};
+
+export const sendPasswordReset = async (email: string): Promise<AuthResult> => {
+  try {
+    console.log('Attempting to send password reset email to:', email);
+    await sendPasswordResetEmail(auth, email);
+    console.log('Password reset email sent successfully');
+    
+    return {
+      success: true
+    };
+  } catch (error: any) {
+    console.error('Password reset error:', error);
+    
+    let errorMessage = error.message;
+    if (error.code === 'auth/user-not-found') {
+      errorMessage = 'No account found with this email address.';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'Please enter a valid email address.';
+    } else if (error.code === 'auth/too-many-requests') {
+      errorMessage = 'Too many attempts. Please try again later.';
+    } else if (error.code === 'auth/network-request-failed') {
+      errorMessage = 'Network error. Please check your internet connection.';
+    }
+    
+    return {
+      success: false,
+      error: errorMessage
     };
   }
 };

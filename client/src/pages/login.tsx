@@ -5,18 +5,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { loginWithEmail, signUpWithEmail } from '@/lib/auth';
+import { loginWithEmail, signUpWithEmail, sendPasswordReset } from '@/lib/auth'; // Add sendPasswordReset import
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false); // New state for forgot password modal
+  const [resetEmail, setResetEmail] = useState(''); // New state for reset email
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false); // New loading state for reset
   const { toast } = useToast();
 
   // Function to get user-friendly error message
@@ -113,6 +116,52 @@ export default function LoginPage() {
     }
   };
 
+  // New function to handle password reset
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!resetEmail) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      const result = await sendPasswordReset(resetEmail);
+
+      if (result.success) {
+        toast({
+          title: "Reset email sent",
+          description: "Check your email for instructions to reset your password.",
+        });
+        setShowForgotPassword(false);
+        setResetEmail('');
+      } else {
+        const friendlyError = getUserFriendlyError(result.error || '');
+        toast({
+          title: "Failed to send reset email",
+          description: friendlyError,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const friendlyError = getUserFriendlyError(errorMessage);
+      toast({
+        title: "Something went wrong",
+        description: friendlyError,
+        variant: "destructive"
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -178,7 +227,18 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password">Password</Label>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Input
                   id="password"
@@ -248,6 +308,56 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Reset your password</CardTitle>
+              <CardDescription>
+                Enter your email address and we'll send you instructions to reset your password.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmail('');
+                    }}
+                    disabled={resetLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={resetLoading}
+                  >
+                    {resetLoading ? 'Sending...' : 'Send reset email'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
