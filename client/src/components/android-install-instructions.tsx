@@ -1,33 +1,33 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Share, PlusSquare, ArrowUp } from "lucide-react";
+import { MoreVertical, Home, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-interface IOSInstallInstructionsProps {
+interface AndroidInstallInstructionsProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function IOSInstallInstructions({ isOpen, onClose }: IOSInstallInstructionsProps) {
+export default function AndroidInstallInstructions({ isOpen, onClose }: AndroidInstallInstructionsProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
     {
-      title: "Tap the Share Button",
-      description: "Tap the share icon at the bottom of Safari (the square with arrow pointing up)",
-      icon: Share,
-      image: "📤"
+      title: "Tap the Menu Button",
+      description: "Tap the three dots in the top right corner of Chrome",
+      icon: MoreVertical,
+      image: "⬇️"
     },
     {
-      title: "Add to Home Screen",
-      description: "Scroll down and tap 'Add to Home Screen' from the menu",
-      icon: PlusSquare,
-      image: "➕"
+      title: "Find Install Option",
+      description: "Look for 'Install app' or 'Add to Home screen' in the menu",
+      icon: Home,
+      image: "📱"
     },
     {
       title: "Confirm Installation",
-      description: "Tap 'Add' in the top right corner to finish",
-      icon: null,
+      description: "Tap 'Install' in the popup to add YumTrack to your home screen",
+      icon: Check,
       image: "✅"
     }
   ];
@@ -38,9 +38,9 @@ export default function IOSInstallInstructions({ isOpen, onClose }: IOSInstallIn
         return (
           <div className="space-y-4">
             <div className="bg-gray-100 rounded-lg p-4 text-center">
-              <div className="text-4xl mb-2">📤</div>
+              <div className="text-4xl mb-2">⬇️</div>
               <p className="text-sm text-gray-600">
-                The share button looks like a square with an arrow pointing upward
+                Look for the three dots menu in the top right corner
               </p>
             </div>
           </div>
@@ -49,13 +49,13 @@ export default function IOSInstallInstructions({ isOpen, onClose }: IOSInstallIn
         return (
           <div className="space-y-4">
             <div className="bg-gray-100 rounded-lg p-4 text-center">
-              <div className="text-4xl mb-2">➕</div>
+              <div className="text-4xl mb-2">📱</div>
               <p className="text-sm text-gray-600">
-                You may need to scroll down in the share menu to see the option
+                Scroll through the menu to find the install option
               </p>
             </div>
             <div className="text-xs text-muted-foreground text-center">
-              Look for "Add to Home Screen" in the second row of icons
+              It might be called "Install app" or "Add to Home screen"
             </div>
           </div>
         );
@@ -65,8 +65,11 @@ export default function IOSInstallInstructions({ isOpen, onClose }: IOSInstallIn
             <div className="bg-gray-100 rounded-lg p-4 text-center">
               <div className="text-4xl mb-2">✅</div>
               <p className="text-sm text-gray-600">
-                Review the app name and icon, then tap Add to confirm
+                Confirm the installation when prompted
               </p>
+            </div>
+            <div className="text-xs text-muted-foreground text-center">
+              The app will be added to your home screen for quick access
             </div>
           </div>
         );
@@ -79,7 +82,7 @@ export default function IOSInstallInstructions({ isOpen, onClose }: IOSInstallIn
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">Add YumTrack to Home Screen</DialogTitle>
+          <DialogTitle className="text-center">Install YumTrack on Android</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -124,11 +127,11 @@ export default function IOSInstallInstructions({ isOpen, onClose }: IOSInstallIn
             )}
           </div>
 
-          {/* iOS Specific Tips */}
+          {/* Quick Tips */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <h4 className="text-sm font-semibold text-blue-800 mb-1">📱 iOS Note</h4>
+            <h4 className="text-sm font-semibold text-blue-800 mb-1">💡 Quick Tip</h4>
             <p className="text-xs text-blue-700">
-              This feature only works in Safari on iOS. Make sure you're not using Chrome or other browsers.
+              Make sure you're using Chrome browser and have visited the site a few times for the install option to appear.
             </p>
           </div>
         </div>

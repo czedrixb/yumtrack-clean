@@ -1,20 +1,11 @@
 import { useState, useEffect } from "react";
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
-
 export function usePWA() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [canInstall, setCanInstall] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInWebView, setIsInWebView] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [isChrome, setIsChrome] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
@@ -48,13 +39,17 @@ export function usePWA() {
         });
     };
 
-    // Detect iOS and Safari
+    // Detect platform and browser
     const userAgent = navigator.userAgent.toLowerCase();
     const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroidDevice = /android/.test(userAgent);
     const isSafariBrowser = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+    const isChromeBrowser = /chrome|chromium/.test(userAgent);
     
     setIsIOS(isIOSDevice);
+    setIsAndroid(isAndroidDevice);
     setIsSafari(isSafariBrowser);
+    setIsChrome(isChromeBrowser);
 
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -92,83 +87,32 @@ export function usePWA() {
 
       setIsInstalled(checkInstalled());
       setIsInWebView(detectWebView());
-
-      // For iOS Safari, we can always show install instructions
-      if (isIOSDevice) {
-        setCanInstall(true);
-      }
-
       setIsReady(true);
     });
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      const event = e as BeforeInstallPromptEvent;
-      console.log('📱 PWA Install Prompt Available!', {
-        platforms: event.platforms
-      });
-      
-      setDeferredPrompt(event);
-      setCanInstall(true);
-      (window as any).deferredPrompt = event;
-    };
 
     const handleAppInstalled = () => {
       console.log('🎉 App was installed!');
       setIsInstalled(true);
-      setCanInstall(false);
-      setDeferredPrompt(null);
-      (window as any).deferredPrompt = null;
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
-  const install = async (): Promise<boolean> => {
-    if (isIOS) {
-      console.log('iOS device - showing installation instructions');
-      return true; // Signal that iOS instructions should be shown
-    }
-
-    if (!deferredPrompt) {
-      console.log('No deferred prompt available');
-      return false;
-    }
-
-    try {
-      console.log('Prompting user for installation...');
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      
-      console.log('User choice:', choice.outcome);
-      
-      if (choice.outcome === 'accepted') {
-        console.log('User accepted PWA installation');
-        setDeferredPrompt(null);
-        setCanInstall(false);
-        (window as any).deferredPrompt = null;
-        return true;
-      }
-    } catch (error) {
-      console.error('Error installing PWA:', error);
-    }
-    
-    return false;
-  };
+  // For iOS and Android, we always show install instructions
+  const canInstall = (isIOS || isAndroid) && !isInstalled;
 
   return {
     canInstall,
     isInstalled,
     isInWebView,
     isIOS,
+    isAndroid,
+    isChrome,
     isSafari,
     isReady,
-    install,
   };
 }
