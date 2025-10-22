@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FoodAnalysis } from "@shared/schema";
 import {
@@ -18,7 +18,8 @@ import {
   format,
   subDays,
   subWeeks,
-  subMonths
+  subMonths,
+  isSameDay
 } from "date-fns";
 import { useState } from "react";
 
@@ -41,17 +42,36 @@ export default function Stats() {
   });
   const [customDateRange, setCustomDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Handle custom date range selection
-  const handleCustomDateRangeSelect = (range: { from?: Date; to?: Date }) => {
-    setCustomDateRange(range);
-    if (range.from && range.to) {
+  // Handle date range selection - auto-apply when both dates are selected
+  const handleDateRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
+    if (!range) {
+      setCustomDateRange({});
+      return;
+    }
+
+    const newRange = {
+      from: range.from,
+      to: range.to
+    };
+
+    setCustomDateRange(newRange);
+
+    // Auto-apply when both dates are selected
+    if (newRange.from && newRange.to) {
       setDateRange({
-        start: range.from,
-        end: range.to,
+        start: newRange.from,
+        end: newRange.to,
       });
       setShowCustomPicker(false);
+      setIsCalendarOpen(false);
     }
+  };
+
+  // Reset custom range selection
+  const resetCustomRange = () => {
+    setCustomDateRange({});
   };
 
   // Quick date range presets
@@ -65,6 +85,13 @@ export default function Stats() {
     { label: "Last 7 Days", range: { start: subDays(new Date(), 6), end: new Date() } },
     { label: "Last 30 Days", range: { start: subDays(new Date(), 29), end: new Date() } },
   ];
+
+  // Handle quick range selection
+  const handleQuickRangeSelect = (range: DateRange) => {
+    setDateRange(range);
+    setShowCustomPicker(false);
+    setCustomDateRange({});
+  };
 
   // Filter analyses based on selected date range
   const filteredAnalyses = analyses.filter(analysis =>
@@ -93,6 +120,24 @@ export default function Stats() {
       return format(dateRange.start, 'MMMM d, yyyy');
     }
     return `${format(dateRange.start, 'MMM d')} - ${format(dateRange.end, 'MMM d, yyyy')}`;
+  };
+
+  // Format selected range for display in the input field
+  const formatSelectedRangeDisplay = () => {
+    if (!customDateRange.from && !customDateRange.to) {
+      return "Select date range";
+    }
+    if (customDateRange.from && !customDateRange.to) {
+      return `From ${format(customDateRange.from, "MMM d, yyyy")}`;
+    }
+    if (customDateRange.from && customDateRange.to) {
+      const isSingleDay = isSameDay(customDateRange.from, customDateRange.to);
+      if (isSingleDay) {
+        return format(customDateRange.from, "MMM d, yyyy");
+      }
+      return `${format(customDateRange.from, "MMM d")} - ${format(customDateRange.to, "MMM d, yyyy")}`;
+    }
+    return "Select date range";
   };
 
   // Determine range type for display purposes
@@ -158,7 +203,7 @@ export default function Stats() {
                   key={quickRange.label}
                   variant="outline"
                   size="sm"
-                  onClick={() => setDateRange(quickRange.range)}
+                  onClick={() => handleQuickRangeSelect(quickRange.range)}
                 >
                   {quickRange.label}
                 </Button>
@@ -166,7 +211,12 @@ export default function Stats() {
               <Button
                 variant={showCustomPicker ? "default" : "outline"}
                 size="sm"
-                onClick={() => setShowCustomPicker(!showCustomPicker)}
+                onClick={() => {
+                  setShowCustomPicker(!showCustomPicker);
+                  if (!showCustomPicker) {
+                    setIsCalendarOpen(true);
+                  }
+                }}
                 className="col-span-2"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -177,67 +227,73 @@ export default function Stats() {
 
           {/* Custom Date Range Picker */}
           {showCustomPicker && (
-            <div className="space-y-2 pt-2 border-t">
-              <label className="text-sm font-medium">Select Custom Range</label>
-              <div className="grid grid-cols-1 gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !customDateRange.from && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateRange.from ? format(customDateRange.from, "PPP") : "Start date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={customDateRange.from}
-                      onSelect={(date) => handleCustomDateRangeSelect({ ...customDateRange, from: date })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !customDateRange.to && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateRange.to ? format(customDateRange.to, "PPP") : "End date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={customDateRange.to}
-                      onSelect={(date) => handleCustomDateRangeSelect({ ...customDateRange, to: date })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {customDateRange.from && customDateRange.to && (
-                  <Button
-                    onClick={() => setShowCustomPicker(false)}
-                    className="mt-2"
-                  >
-                    Apply Custom Range
-                  </Button>
-                )}
+            <div className="space-y-3 pt-3 border-t">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Select Custom Range</label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetCustomRange}
+                  className="h-6 px-2 text-xs"
+                >
+                  Reset
+                </Button>
               </div>
+
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !customDateRange.from && !customDateRange.to && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formatSelectedRangeDisplay()}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <div className="flex items-center justify-between p-2 border-b">
+                    <span className="text-sm font-medium">
+                      {customDateRange.from && customDateRange.to
+                        ? "Range selected"
+                        : "Select date range"}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsCalendarOpen(false)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: customDateRange.from,
+                      to: customDateRange.to,
+                    }}
+                    onSelect={handleDateRangeSelect}
+                    defaultMonth={customDateRange.from || new Date()}
+                    numberOfMonths={1}
+                    className="rounded-md border"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Selection status */}
+              {customDateRange.from && !customDateRange.to && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Now select end date to apply range
+                </p>
+              )}
             </div>
           )}
 
           {/* Current Range Display */}
-          <div className="pt-2 border-t">
+          <div className="pt-3 border-t">
             <p className="text-sm text-muted-foreground text-center">
               Showing: {formatDateRangeDisplay()}
             </p>
