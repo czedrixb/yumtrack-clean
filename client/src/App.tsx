@@ -22,12 +22,13 @@ import LoginPage from "@/pages/login";
 import { useAuth } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/protected-route";
 import { useAuthSync } from '@/hooks/useAuthSync';
+import EmailVerificationHandler from '@/components/email-verification-handler'; // Add this
 
 function Router() {
   const homeRef = useRef<{ goToHome: () => void }>(null);
   const [location, setLocation] = useLocation();
   const { isInWebView } = usePWA();
-  const { user } = useAuth();
+  const { user, isEmailVerified } = useAuth();
 
   useAnalytics();
 
@@ -40,58 +41,62 @@ function Router() {
   };
 
   useEffect(() => {
-    if (user && location === '/login') {
+    // If user is logged in and verified, and they're on login page, redirect to home
+    if (user && isEmailVerified && location === '/login') {
       setLocation('/');
     }
-  }, [user, location, setLocation]);
+  }, [user, isEmailVerified, location, setLocation]);
 
-  // Define routes that should show bottom navigation
+  // Show bottom nav for authenticated users, regardless of verification status
   const showBottomNav = user && location !== '/login' &&
-    !['/privacy-policy', '/terms-of-service'].includes(location);
+    !['/privacy-policy', '/terms-of-service', '/verify-email'].includes(location) &&
+    !location.includes('mode=verifyEmail');
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Banner at the very top of document flow */}
       <PWAInstallBanner />
 
-      {/* Main content area */}
       <div className={showBottomNav ? "pb-16" : ""}>
         <Switch>
           <Route path="/login">
             <LoginPage />
           </Route>
 
+          {/* Add email verification handler route */}
+          <Route path="/verify-email">
+            <EmailVerificationHandler />
+          </Route>
+
           <Route path="/">
-            <ProtectedRoute>
+            <ProtectedRoute requireEmailVerification={false}>
               <Home ref={homeRef} />
             </ProtectedRoute>
           </Route>
 
           <Route path="/history">
-            <ProtectedRoute>
+            <ProtectedRoute requireEmailVerification={false}>
               <History />
             </ProtectedRoute>
           </Route>
 
           <Route path="/stats">
-            <ProtectedRoute>
+            <ProtectedRoute requireEmailVerification={false}>
               <Stats />
             </ProtectedRoute>
           </Route>
 
           <Route path="/settings">
-            <ProtectedRoute>
+            <ProtectedRoute requireEmailVerification={false}>
               <Settings />
             </ProtectedRoute>
           </Route>
 
           <Route path="/download">
-            <ProtectedRoute>
+            <ProtectedRoute requireEmailVerification={false}>
               <Download />
             </ProtectedRoute>
           </Route>
 
-          {/* Public routes - no authentication required */}
           <Route path="/privacy-policy">
             <PrivacyPolicy />
           </Route>
@@ -104,7 +109,6 @@ function Router() {
         </Switch>
       </div>
 
-      {/* Only show navigation when user is logged in and not on excluded pages */}
       {showBottomNav && (
         <>
           <BottomNavigation onHomeClick={handleHomeClick} />
@@ -123,7 +127,6 @@ function App() {
       console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
     } else {
       initGA();
-
       setTimeout(() => {
         trackEvent('app_load', 'engagement', 'initial_visit');
       }, 1000);

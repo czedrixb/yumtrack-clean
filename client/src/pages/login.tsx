@@ -1,26 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { auth } from '@/lib/firebase';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { loginWithEmail, signUpWithEmail, sendPasswordReset } from '@/lib/auth'; // Add sendPasswordReset import
+import { loginWithEmail, signUpWithEmail, sendPasswordReset, resendVerificationEmail } from '@/lib/auth';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false); // New state for forgot password modal
-  const [resetEmail, setResetEmail] = useState(''); // New state for reset email
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showVerificationNotice, setShowVerificationNotice] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false); // New loading state for reset
+  const [resetLoading, setResetLoading] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(false);
   const { toast } = useToast();
+  const { user, isEmailVerified, loading: authLoading } = useAuth();
+
+  // Auto-redirect to home if user is logged in and verified
+  useEffect(() => {
+    if (!authLoading && user && isEmailVerified) {
+      console.log('User is logged in and verified, redirecting to home');
+      setLocation('/');
+    }
+  }, [user, isEmailVerified, authLoading, setLocation]);
+
+  useEffect(() => {
+    // Check if user just came from email verification
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromVerification = urlParams.get('fromVerification');
+
+    if (fromVerification === 'success') {
+      toast({
+        title: "Email verified!",
+        description: "Your email has been verified. You can now log in.",
+      });
+      // Clean up the URL
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [toast]);
 
   // Function to get user-friendly error message
   const getUserFriendlyError = (error: string) => {
@@ -48,14 +76,28 @@ export default function LoginPage() {
     if (error.includes('auth/too-many-requests')) {
       return 'Too many failed attempts. Please try again in a few minutes.';
     }
+    if (error.includes('email is already verified')) {
+      return 'Your email is already verified.';
+    }
 
     return 'Something went wrong. Please try again.';
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
+    // Basic validation (keep your existing validation code)
     if (!formData.email || !formData.password) {
       toast({
         title: "Missing information",
@@ -81,27 +123,77 @@ export default function LoginPage() {
 
       if (isLogin) {
         result = await loginWithEmail(formData.email, formData.password);
+
+        if (result.success) {
+          console.log('Login successful, user data:', result.user);
+
+          // For login: Wait a moment for auth state to update, then check verification
+          setTimeout(async () => {
+            try {
+              // Force refresh the auth state
+              const currentUser = auth.currentUser;
+              if (currentUser) {
+                await currentUser.reload();
+                const refreshedUser = auth.currentUser;
+
+                console.log('Refreshed user verification status:', refreshedUser?.emailVerified);
+
+                if (refreshedUser?.emailVerified) {
+                  console.log('User is verified, redirecting to home');
+                  toast({
+                    title: "Welcome back!",
+                    description: "Successfully logged in.",
+                  });
+                  setLocation('/');
+                } else {
+                  // User is not verified, but don't show verification modal for login
+                  console.log('User is not verified, but this is login - allowing access');
+                  toast({
+                    title: "Welcome back!",
+                    description: "Successfully logged in.",
+                  });
+                  setLocation('/');
+                }
+              }
+            } catch (error) {
+              console.error('Error refreshing user:', error);
+              // If there's an error refreshing, proceed to home page
+              toast({
+                title: "Welcome back!",
+                description: "Successfully logged in.",
+              });
+              setLocation('/');
+            }
+          }, 500);
+
+        } else {
+          const friendlyError = getUserFriendlyError(result.error || '');
+          toast({
+            title: "Sign in failed",
+            description: friendlyError,
+            variant: "destructive"
+          });
+        }
       } else {
+        // SIGN UP FLOW - Keep existing logic for signup
         result = await signUpWithEmail(formData.email, formData.password, formData.username);
-      }
 
-      if (result.success) {
-        toast({
-          title: isLogin ? "Welcome back!" : "Account created!",
-          description: isLogin
-            ? "Successfully logged in."
-            : "Your account has been created successfully.",
-        });
+        if (result.success) {
+          toast({
+            title: "Account created!",
+            description: "Your account has been created successfully. Please check your email to verify your account.",
+          });
 
-        // Redirect to home page
-        setLocation('/');
-      } else {
-        const friendlyError = getUserFriendlyError(result.error || '');
-        toast({
-          title: isLogin ? "Sign in failed" : "Sign up failed",
-          description: friendlyError,
-          variant: "destructive"
-        });
+          // For signup: always show verification notice
+          setShowVerificationNotice(true);
+        } else {
+          const friendlyError = getUserFriendlyError(result.error || '');
+          toast({
+            title: "Sign up failed",
+            description: friendlyError,
+            variant: "destructive"
+          });
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -116,7 +208,6 @@ export default function LoginPage() {
     }
   };
 
-  // New function to handle password reset
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -162,15 +253,36 @@ export default function LoginPage() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleResendVerification = async () => {
+    setVerificationLoading(true);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+    try {
+      const result = await resendVerificationEmail();
+
+      if (result.success) {
+        toast({
+          title: "Verification email sent",
+          description: "Check your email for the verification link.",
+        });
+      } else {
+        const friendlyError = getUserFriendlyError(result.error || '');
+        toast({
+          title: "Failed to send verification email",
+          description: friendlyError,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const friendlyError = getUserFriendlyError(errorMessage);
+      toast({
+        title: "Something went wrong",
+        description: friendlyError,
+        variant: "destructive"
+      });
+    } finally {
+      setVerificationLoading(false);
+    }
   };
 
   return (
@@ -283,10 +395,10 @@ export default function LoginPage() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors hover:underline"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => {
                 setIsLogin(!isLogin);
-                // Clear form when switching modes
+                setShowVerificationNotice(false);
                 setFormData({
                   username: '',
                   email: '',
@@ -294,10 +406,15 @@ export default function LoginPage() {
                 });
               }}
             >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"
-              }
+              {isLogin ? (
+                <>
+                  Don't have an account? <span className="text-primary font-semibold">Sign up</span>
+                </>
+              ) : (
+                <>
+                  Already have an account? <span className="text-primary font-semibold">Sign in</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -354,6 +471,48 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Email Verification Notice Modal */}
+      {showVerificationNotice && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Verify your email</CardTitle>
+              <CardDescription>
+                We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Important:</strong> You need to verify your email before you can access all features.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowVerificationNotice(false);
+                  }}
+                >
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={handleResendVerification}
+                  disabled={verificationLoading}
+                >
+                  {verificationLoading ? 'Sending...' : 'Resend email'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
