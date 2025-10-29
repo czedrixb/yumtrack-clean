@@ -39,9 +39,8 @@ import {
   logoutUser,
   updateUserProfile,
   updateUserPassword,
-  initiateEmailChange,
-  completeEmailChangeWithPendingEmail,
-  sendVerificationEmail
+  updateUserEmail,
+  sendVerificationEmail,
 } from "@/lib/auth";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
@@ -146,6 +145,10 @@ export default function Settings() {
     if (error.includes('auth/operation-not-allowed')) {
       return 'Please verify your new email address before changing your email. We have sent a verification link to your new email.';
     }
+    if (error.includes('EMAIL_CHANGE_PENDING_VERIFICATION')) {
+      return 'Please verify your current email first to proceed with the email change.';
+    }
+
 
     return 'Something went wrong. Please try again.';
   };
@@ -310,17 +313,9 @@ export default function Settings() {
     }
   };
 
-  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState('');
-
   const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
     setIsUpdatingEmail(true);
     try {
-      console.log('Starting email change process...', {
-        currentEmail: currentUser?.email,
-        newEmail: values.newEmail
-      });
-
       if (values.newEmail === currentUser?.email) {
         toast({
           title: "No changes made",
@@ -330,11 +325,9 @@ export default function Settings() {
         return;
       }
 
-      // Use the new email change flow
-      const result = await initiateEmailChange(values.currentPassword, values.newEmail);
+      const result = await updateUserEmail(values.currentPassword, values.newEmail);
 
       if (result.success) {
-        // Success case: Email was updated immediately (rare case)
         toast({
           title: "Email updated successfully",
           description: "Your email has been updated. Please check your new email for verification.",
@@ -344,32 +337,14 @@ export default function Settings() {
         setCurrentUser({
           ...currentUser!,
           email: values.newEmail,
+          emailVerified: false,
         });
 
         setShowEmailModal(false);
-        setShowEmailCurrentPassword(false);
-
-      } else if (result.error === 'VERIFICATION_REQUIRED') {
-        // Special case: Verification required before email change
-        setPendingEmail(values.newEmail);
-        setShowEmailVerificationModal(true);
-
-        toast({
-          title: "Verification required",
-          description: "Please verify your current email to proceed with the email change.",
-        });
-
-        // Reset form but keep the modal open for verification
-        emailForm.reset({
-          newEmail: values.newEmail,
-          currentPassword: "",
-        });
-        setShowEmailModal(false);
+        emailForm.reset();
         setShowEmailCurrentPassword(false);
 
       } else {
-        // Other errors
-        console.error('Email change initiation failed:', result.error);
         const friendlyError = getUserFriendlyError(result.error || '');
         toast({
           title: "Update failed",
@@ -392,121 +367,25 @@ export default function Settings() {
   };
 
 
-  const handleCompleteEmailUpdate = async () => {
-    try {
-      const result = await completeEmailChangeWithPendingEmail();
 
-      if (result.success) {
-        toast({
-          title: "Email updated successfully",
-          description: "Your email address has been changed successfully.",
-        });
 
-        // Update local state
-        setCurrentUser({
-          ...currentUser!,
-          email: result.user?.email || pendingEmail,
-        });
 
-        setShowEmailVerificationModal(false);
-        setPendingEmail('');
-      } else {
-        const friendlyError = getUserFriendlyError(result.error || '');
-        toast({
-          title: "Email update incomplete",
-          description: friendlyError,
-          variant: "destructive",
-        });
+  const refreshUserAuthState = async () => {
+    if (currentUser) {
+      try {
+        await currentUser.reload();
+        const updatedUser = auth.currentUser;
+        setCurrentUser(updatedUser);
+        console.log('Manual refresh - Email verified:', updatedUser?.emailVerified);
+
+        return updatedUser;
+      } catch (error) {
+        console.error('Error refreshing auth state:', error);
+        return currentUser;
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      const friendlyError = getUserFriendlyError(errorMessage);
-      toast({
-        title: "Error",
-        description: friendlyError,
-        variant: "destructive",
-      });
     }
+    return currentUser;
   };
-
-  // Replace your useEffect with this:
-  useEffect(() => {
-    // Check for email change verification in URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const emailChangeVerified = urlParams.get('emailChangeVerified');
-    const emailChangePending = urlParams.get('emailChangePending');
-
-    console.log('URL params check:', { emailChangeVerified, emailChangePending });
-
-    if (emailChangeVerified === 'true') {
-      // User verified their email after it was changed
-      console.log('Email change verified via URL');
-      toast({
-        title: "Email verified",
-        description: "Your new email has been verified successfully.",
-      });
-
-      // Clean up URL
-      window.history.replaceState({}, '', '/settings');
-    }
-
-    if (emailChangePending) {
-      const newEmail = urlParams.get('newEmail');
-      console.log('Email change pending with new email:', newEmail);
-
-      if (newEmail) {
-        setPendingEmail(newEmail);
-        setShowEmailVerificationModal(true);
-        toast({
-          title: "Email verification sent",
-          description: "Please verify your current email to continue with the email change.",
-        });
-      }
-
-      // Clean up URL
-      window.history.replaceState({}, '', '/settings');
-    }
-  }, []);
-
-  // Add this useEffect to automatically complete the email change when user is verified
-  useEffect(() => {
-    const checkEmailVerification = async () => {
-      if (currentUser && showEmailVerificationModal) {
-        try {
-          // Reload user to get latest verification status
-          await currentUser.reload();
-          const updatedUser = auth.currentUser;
-
-          console.log('Checking email verification status:', {
-            email: updatedUser?.email,
-            verified: updatedUser?.emailVerified,
-            showModal: showEmailVerificationModal
-          });
-
-          if (updatedUser?.emailVerified) {
-            console.log('Email is verified, attempting to complete email change');
-            // User is verified, try to complete the email change
-            await handleCompleteEmailUpdate();
-          }
-        } catch (error) {
-          console.error('Error checking email verification:', error);
-        }
-      }
-    };
-
-    // Check verification status every 2 seconds when modal is open
-    let interval: NodeJS.Timeout;
-    if (showEmailVerificationModal && currentUser) {
-      interval = setInterval(checkEmailVerification, 2000);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [showEmailVerificationModal, currentUser]);
-
 
   const updateSetting = (key: string, value: boolean) => {
     localStorage.setItem(key, JSON.stringify(value));
@@ -1257,76 +1136,7 @@ export default function Settings() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Email Verification Modal */}
-      <AlertDialog open={showEmailVerificationModal} onOpenChange={setShowEmailVerificationModal}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Verify Your Current Email</AlertDialogTitle>
-            <AlertDialogDescription>
-              We've sent a verification link to your current email address: <strong>{currentUser?.email}</strong>.
-              Please check your email and click the link to proceed with changing your email to <strong>{pendingEmail}</strong>.
-              After clicking the link, this process will complete automatically.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
 
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900 dark:border-blue-800">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                <strong>Current Status:</strong> {currentUser?.emailVerified ? 'Email Verified ✓' : 'Waiting for verification...'}
-              </p>
-              {currentUser?.emailVerified && (
-                <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
-                  Email verified! Completing the change now...
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  // Resend verification to current email
-                  if (currentUser) {
-                    sendVerificationEmail(currentUser);
-                    toast({
-                      title: "Verification email resent",
-                      description: "Please check your current email.",
-                    });
-                  }
-                }}
-                className="flex-1"
-                disabled={currentUser?.emailVerified}
-              >
-                {currentUser?.emailVerified ? 'Verified ✓' : 'Resend Verification'}
-              </Button>
-              <Button
-                onClick={handleCompleteEmailUpdate}
-                className="flex-1"
-                disabled={currentUser?.emailVerified}
-              >
-                {currentUser?.emailVerified ? 'Completing...' : 'Check Verification'}
-              </Button>
-            </div>
-
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                {currentUser?.emailVerified
-                  ? 'Processing your email change...'
-                  : 'After clicking the verification link, return here to complete the process.'
-                }
-              </p>
-            </div>
-
-            <Button
-              variant="ghost"
-              onClick={() => setShowEmailVerificationModal(false)}
-              className="w-full"
-            >
-              Cancel Email Change
-            </Button>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* App Installation - Mobile Only */}
       {isMobile && (

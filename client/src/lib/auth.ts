@@ -44,92 +44,61 @@ export const sendVerificationEmail = async (user: User): Promise<AuthResult> => 
   }
 };
 
-export const initiateEmailChange = async (currentPassword: string, newEmail: string): Promise<AuthResult> => {
+
+
+
+
+export const updateUserEmail = async (currentPassword: string, newEmail: string): Promise<AuthResult> => {
   try {
     const user = auth.currentUser;
     if (!user || !user.email) {
-      return {
-        success: false,
-        error: 'No user is currently signed in.'
-      };
+      return { success: false, error: 'No user logged in' };
     }
 
-    // Re-authenticate user first
+    if (user.email === newEmail) {
+      return { success: false, error: 'New email is the same as current email' };
+    }
+
+    // Reauthenticate user
     const credential = EmailAuthProvider.credential(user.email, currentPassword);
     await reauthenticateWithCredential(user, credential);
 
-    // Store the pending email in localStorage
-    const pendingEmailData = {
-      newEmail,
-      timestamp: Date.now(),
-      uid: user.uid,
-      currentEmail: user.email // Store current email for fallback
-    };
-    localStorage.setItem('pendingEmailChange', JSON.stringify(pendingEmailData));
+    // Update email directly
+    await updateEmail(user, newEmail);
 
-    // IMPORTANT: We CANNOT update the email immediately due to Firebase restrictions
-    // Instead, we'll send a verification email to the NEW email with special instructions
-    
-    // First, let's try to update the email (this will likely fail with operation-not-allowed)
-    try {
-      await updateEmail(user, newEmail);
-      console.log('Email updated successfully to:', newEmail);
-      
-      // If we get here, the email was updated - send verification to new email
-      await sendEmailVerification(user, {
-        url: `${window.location.origin}/settings?emailChangeVerified=true`,
-        handleCodeInApp: false
-      });
-      
-      return {
-        success: true,
-        user: {
-          uid: user.uid,
-          email: newEmail,
-          displayName: user.displayName,
-        }
-      };
-    } catch (updateError: any) {
-      // If update fails due to verification requirement, handle it gracefully
-      if (updateError.code === 'auth/operation-not-allowed') {
-        console.log('Email update requires verification first, using fallback approach');
-        
-        // Fallback approach: Send verification to current email with instructions
-        // This is a workaround since we can't send verification to unverified new email
-        await sendEmailVerification(user, {
-          url: `${window.location.origin}/settings?emailChangePending=true&newEmail=${encodeURIComponent(newEmail)}`,
-          handleCodeInApp: false
-        });
-        
-        return {
-          success: false,
-          error: 'VERIFICATION_REQUIRED' // Special error code for the frontend
-        };
-      } else {
-        // Re-throw other errors
-        throw updateError;
+    // Send verification to new email
+    await sendEmailVerification(user);
+
+    return { 
+      success: true, 
+      message: 'Email updated successfully. Please check your new email for verification.',
+      user: {
+        uid: user.uid,
+        email: newEmail,
+        displayName: user.displayName,
+        emailVerified: false // Reset verification status
       }
-    }
-    
+    };
+
   } catch (error: any) {
-    console.error('Email change initiation error:', error);
+    console.error('Email update error:', error);
     
     let errorMessage = error.message;
-    if (error.code === 'auth/wrong-password') {
-      errorMessage = 'Current password is incorrect.';
-    } else if (error.code === 'auth/invalid-credential') {
-      errorMessage = 'Current password is incorrect.';
+    if (error.code === 'auth/requires-recent-login') {
+      errorMessage = 'For security reasons, please sign in again to change your email.';
     } else if (error.code === 'auth/email-already-in-use') {
       errorMessage = 'This email is already in use by another account.';
+    } else if (error.code === 'auth/wrong-password') {
+      errorMessage = 'Current password is incorrect.';
     } else if (error.code === 'auth/invalid-email') {
       errorMessage = 'Invalid email address.';
-    } else if (error.code === 'auth/requires-recent-login') {
-      errorMessage = 'For security reasons, please sign in again to change your email.';
+    } else if (error.code === 'auth/operation-not-allowed') {
+      errorMessage = 'Please verify your current email before changing it.';
     }
     
-    return {
-      success: false,
-      error: errorMessage
+    return { 
+      success: false, 
+      error: errorMessage 
     };
   }
 };
@@ -203,108 +172,6 @@ export const updateUserPassword = async (currentPassword: string, newPassword: s
     };
   }
 };
-
-export const completeEmailChangeWithPendingEmail = async (): Promise<AuthResult> => {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      console.error('No user found when completing email change');
-      return {
-        success: false,
-        error: 'No user is currently signed in.'
-      };
-    }
-
-    console.log('Starting email change completion for user:', user.email);
-    console.log('Current email verified status:', user.emailVerified);
-
-    // Check if email is verified
-    await user.reload();
-    const reloadedUser = auth.currentUser;
-    
-    console.log('After reload - Email verified:', reloadedUser?.emailVerified);
-    console.log('Current email:', reloadedUser?.email);
-    
-    if (!reloadedUser?.emailVerified) {
-      console.log('Email not verified yet');
-      return {
-        success: false,
-        error: 'Please verify your current email before proceeding with the email change. Make sure you clicked the verification link in your email.'
-      };
-    }
-
-    // Get pending email from storage
-    const pendingEmailDataStr = localStorage.getItem('pendingEmailChange');
-    console.log('Pending email data from storage:', pendingEmailDataStr);
-    
-    if (!pendingEmailDataStr) {
-      return {
-        success: false,
-        error: 'No pending email change found. Please start the email change process again.'
-      };
-    }
-
-    const pendingEmailData = JSON.parse(pendingEmailDataStr);
-    console.log('Parsed pending email data:', pendingEmailData);
-    
-    // Verify the pending email change belongs to current user
-    if (pendingEmailData.uid !== user.uid) {
-      localStorage.removeItem('pendingEmailChange');
-      console.log('User ID mismatch:', { storedUid: pendingEmailData.uid, currentUid: user.uid });
-      return {
-        success: false,
-        error: 'Pending email change does not match current user.'
-      };
-    }
-
-    // Check if pending email change is not too old (24 hours)
-    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    if (Date.now() - pendingEmailData.timestamp > TWENTY_FOUR_HOURS) {
-      localStorage.removeItem('pendingEmailChange');
-      console.log('Pending email change expired');
-      return {
-        success: false,
-        error: 'Pending email change has expired. Please start the process again.'
-      };
-    }
-
-    console.log('Attempting to update email from', user.email, 'to', pendingEmailData.newEmail);
-
-    // Now update the email (user is verified, so this should work)
-    await updateEmail(user, pendingEmailData.newEmail);
-    localStorage.removeItem('pendingEmailChange');
-    
-    console.log('Email change completed successfully:', pendingEmailData.newEmail);
-    
-    return {
-      success: true,
-      user: {
-        uid: user.uid,
-        email: pendingEmailData.newEmail,
-        displayName: user.displayName,
-      }
-    };
-  } catch (error: any) {
-    console.error('Email change completion error:', error);
-    
-    let errorMessage = error.message;
-    if (error.code === 'auth/requires-recent-login') {
-      errorMessage = 'For security reasons, please sign in again to complete the email change.';
-    } else if (error.code === 'auth/email-already-in-use') {
-      errorMessage = 'This email is already in use by another account.';
-    } else if (error.code === 'auth/operation-not-allowed') {
-      errorMessage = 'Please verify your new email address before changing email.';
-    } else if (error.code === 'auth/invalid-email') {
-      errorMessage = 'The new email address is invalid.';
-    }
-    
-    return {
-      success: false,
-      error: errorMessage
-    };
-  }
-};
-
 
 
 export const loginWithEmail = async (email: string, password: string): Promise<AuthResult> => {
@@ -403,6 +270,28 @@ export const signUpWithEmail = async (email: string, password: string, username:
     };
   }
 };
+
+export async function sendVerificationEmailToCurrentUser() {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      return { success: false, error: 'No user logged in' };
+    }
+
+    await sendEmailVerification(user);
+    return { 
+      success: true, 
+      message: 'Verification email sent successfully.' 
+    };
+
+  } catch (error: any) {
+    console.error('Send verification email error:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to send verification email.' 
+    };
+  }
+}
 
 export const resendVerificationEmail = async (): Promise<AuthResult> => {
   try {
